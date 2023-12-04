@@ -2,9 +2,9 @@ advent_of_code::solution!(4);
 
 pub fn part_one(options: &str) -> Option<u32> {
     let mut index = 0;
+    let mut winning = [0;10];
     Some(options.lines().map(|line| {
         index=0;
-        let mut winning = [0;10];
         let mut numbers_matched = 0;
         let mut winning_phase = false;
         let mut my_phase = false;
@@ -61,7 +61,67 @@ pub fn part_one(options: &str) -> Option<u32> {
 }
 
 pub fn part_two(input: &str) -> Option<u32> {
-    part_one(input)
+    let mut card_index = 0;
+    let mut index = 0;
+    let mut copies = [0;201];
+    let mut winning = [0;10];
+    Some(input.lines().map(|line| {
+        index=0;
+        let mut numbers_matched = 0;
+        let mut winning_phase = false;
+        let mut my_phase = false;
+        let mut space_space = false;
+        let mut char1 = -1;
+        let mut char2 = -1;
+        line.chars().for_each(|c| {
+            if char2 != -1 {
+                if winning_phase {
+                    let my_nr = char1 * 10 + char2;
+                    winning[index]= my_nr;
+                    index+=1;
+                } else if my_phase {
+                    let my_nr = char1 * 10 + char2;
+                    if winning.contains(&my_nr) {
+                        numbers_matched += 1;
+                    };
+                };
+                char1 = -1;
+                char2 = -1;
+                space_space = false;
+            };
+            if c == '|' {
+                winning_phase = false;
+                my_phase = true;
+                space_space = false;
+            } else if winning_phase | my_phase {
+                if c == ' ' {
+                    if space_space {
+                        char1 = 0;
+                    }
+                    space_space = true;
+                } else if (winning_phase | my_phase) & c.is_numeric() {
+                    if char1 == -1 {
+                        char1 = c.to_digit(10).unwrap() as i32;
+                    } else {
+                        char2 = c.to_digit(10).unwrap() as i32;
+                    }
+                };
+            } else if c == ':' {
+                winning_phase = true;
+                space_space = false;
+            }
+        });
+        let my_nr = char1 * 10 + char2;
+        if winning.contains(&my_nr) {
+            numbers_matched += 1;
+        };
+        let copies_at_index_plus_one = copies[card_index] + 1;
+        for i in (card_index+1)..(card_index+numbers_matched+1) {
+            copies[i] = copies[i] + copies_at_index_plus_one;
+        }
+        card_index += 1;
+        return copies_at_index_plus_one
+    }).sum())
 }
 
 #[cfg(test)]
@@ -77,6 +137,6 @@ mod tests {
     #[test]
     fn test_part_two() {
         let result = part_two(&advent_of_code::template::read_file("examples", DAY));
-        assert_eq!(result, Some(13));
+        assert_eq!(result, Some(30));
     }
 }
