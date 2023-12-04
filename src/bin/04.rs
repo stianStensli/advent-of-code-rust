@@ -1,8 +1,7 @@
-use std::collections::HashSet;
 advent_of_code::solution!(4);
 
 pub fn part_one(options: &str) -> Option<u32> {
-    let mut winning = HashSet::new();
+    let mut winning = Vec::new();
     Some(options.lines().map(|line| {
         winning.clear();
         let mut numbers_matched = 0;
@@ -15,7 +14,7 @@ pub fn part_one(options: &str) -> Option<u32> {
             if char2 != -1 {
                 if winning_phase {
                     let my_nr = char1 * 10 + char2;
-                    winning.insert(my_nr);
+                    winning.push(my_nr);
                 } else if my_phase {
                     let my_nr = char1 * 10 + char2;
                     if winning.contains(&my_nr) {
