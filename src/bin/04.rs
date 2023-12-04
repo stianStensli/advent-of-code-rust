@@ -1,9 +1,10 @@
 advent_of_code::solution!(4);
 
 pub fn part_one(options: &str) -> Option<u32> {
-    let mut winning = Vec::new();
+    let mut index = 0;
     Some(options.lines().map(|line| {
-        winning.clear();
+        index=0;
+        let mut winning = [0;10];
         let mut numbers_matched = 0;
         let mut winning_phase = false;
         let mut my_phase = false;
@@ -14,7 +15,8 @@ pub fn part_one(options: &str) -> Option<u32> {
             if char2 != -1 {
                 if winning_phase {
                     let my_nr = char1 * 10 + char2;
-                    winning.push(my_nr);
+                    winning[index]= my_nr;
+                    index+=1;
                 } else if my_phase {
                     let my_nr = char1 * 10 + char2;
                     if winning.contains(&my_nr) {
