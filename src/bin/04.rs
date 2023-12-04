@@ -2,21 +2,39 @@ advent_of_code::solution!(4);
 
 pub fn part_one(options: &str) -> Option<u32> {
     let mut index = 0;
-    let mut winning = [0;10];
-    Some(options.lines().map(|line| {
-        index=0;
-        let mut numbers_matched = 0;
-        let mut winning_phase = false;
-        let mut my_phase = false;
-        let mut space_space = false;
-        let mut char1 = -1;
-        let mut char2 = -1;
-        line.chars().for_each(|c| {
+    let mut res = 0;
+    let mut winning = [0; 10];
+    let mut numbers_matched = 0;
+    let mut winning_phase = false;
+    let mut my_phase = false;
+    let mut space_space = false;
+    let mut char1 = -1;
+    let mut char2 = -1;
+    Some(options.chars().for_each(|c| {
+        if c == '\n' {
+            let my_nr = char1 * 10 + char2;
+            if winning.contains(&my_nr) {
+                numbers_matched += 1;
+            };
+            if numbers_matched == 0 {
+                res += numbers_matched;
+            } else {
+                res += 2u32.pow(numbers_matched - 1);
+            }
+
+            index = 0;
+            numbers_matched = 0;
+            winning_phase = false;
+            my_phase = false;
+            space_space = false;
+            char1 = -1;
+            char2 = -1;
+        } else {
             if char2 != -1 {
                 if winning_phase {
                     let my_nr = char1 * 10 + char2;
-                    winning[index]= my_nr;
-                    index+=1;
+                    winning[index] = my_nr;
+                    index += 1;
                 } else if my_phase {
                     let my_nr = char1 * 10 + char2;
                     if winning.contains(&my_nr) {
@@ -48,37 +66,51 @@ pub fn part_one(options: &str) -> Option<u32> {
                 winning_phase = true;
                 space_space = false;
             }
-        });
-        let my_nr = char1 * 10 + char2;
-        if winning.contains(&my_nr) {
-            numbers_matched += 1;
-        };
-        if numbers_matched == 0 || numbers_matched == 1 {
-            return numbers_matched;
-        };
-        2u32.pow(numbers_matched-1)
-    }).sum())
+        }
+    }));
+    Some(res)
 }
 
 pub fn part_two(input: &str) -> Option<u32> {
     let mut card_index = 0;
     let mut index = 0;
-    let mut copies = [0;201];
-    let mut winning = [0;10];
-    Some(input.lines().map(|line| {
-        index=0;
-        let mut numbers_matched = 0;
-        let mut winning_phase = false;
-        let mut my_phase = false;
-        let mut space_space = false;
-        let mut char1 = -1;
-        let mut char2 = -1;
-        line.chars().for_each(|c| {
+    let mut res = 0;
+    let mut copies = [0; 201];
+    let mut winning = [0; 10];
+    let mut numbers_matched = 0;
+    let mut winning_phase = false;
+    let mut my_phase = false;
+    let mut space_space = false;
+    let mut char1 = -1;
+    let mut char2 = -1;
+    input.chars().for_each(|c| {
+        if c == '\n' {
+            let my_nr = char1 * 10 + char2;
+            if winning.contains(&my_nr) {
+                numbers_matched += 1;
+            };
+            let copies_at_index_plus_one = copies[card_index] + 1;
+            card_index += 1;
+            for i in card_index..(card_index + numbers_matched) {
+                copies[i] = copies[i] + copies_at_index_plus_one;
+            }
+            if char1 != -1 {
+                res += copies_at_index_plus_one;
+            }
+
+            index = 0;
+            numbers_matched = 0;
+            winning_phase = false;
+            my_phase = false;
+            space_space = false;
+            char1 = -1;
+            char2 = -1;
+        } else {
             if char2 != -1 {
                 if winning_phase {
                     let my_nr = char1 * 10 + char2;
-                    winning[index]= my_nr;
-                    index+=1;
+                    winning[index] = my_nr;
+                    index += 1;
                 } else if my_phase {
                     let my_nr = char1 * 10 + char2;
                     if winning.contains(&my_nr) {
@@ -110,19 +142,10 @@ pub fn part_two(input: &str) -> Option<u32> {
                 winning_phase = true;
                 space_space = false;
             }
-        });
-        let my_nr = char1 * 10 + char2;
-        if winning.contains(&my_nr) {
-            numbers_matched += 1;
-        };
-        let copies_at_index_plus_one = copies[card_index] + 1;
-        card_index += 1;
-        for i in (card_index)..(card_index+numbers_matched) {
-            copies[i] = copies[i] + copies_at_index_plus_one;
         }
-        
-        return copies_at_index_plus_one
-    }).sum())
+    });
+
+    return Some(res);
 }
 
 #[cfg(test)]
