@@ -116,10 +116,11 @@ pub fn part_two(input: &str) -> Option<u32> {
             numbers_matched += 1;
         };
         let copies_at_index_plus_one = copies[card_index] + 1;
-        for i in (card_index+1)..(card_index+numbers_matched+1) {
+        card_index += 1;
+        for i in (card_index)..(card_index+numbers_matched) {
             copies[i] = copies[i] + copies_at_index_plus_one;
         }
-        card_index += 1;
+        
         return copies_at_index_plus_one
     }).sum())
 }
