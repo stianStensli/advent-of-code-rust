@@ -2,8 +2,9 @@ use std::collections::HashSet;
 advent_of_code::solution!(4);
 
 pub fn part_one(options: &str) -> Option<u32> {
+    let mut winning = HashSet::new();
     Some(options.lines().map(|line| {
-        let mut winning = HashSet::new();
+        winning.clear();
         let mut numbers_matched = 0;
         let mut winning_phase = false;
         let mut my_phase = false;
@@ -19,17 +20,13 @@ pub fn part_one(options: &str) -> Option<u32> {
                     let my_nr = char1 * 10 + char2;
                     if winning.contains(&my_nr) {
                         numbers_matched += 1;
-                    } else {
-                    }
+                    };
                 };
                 char1 = -1;
                 char2 = -1;
                 space_space = false;
             };
-            if c == ':' {
-                winning_phase = true;
-                space_space = false;
-            } else if c == '|' {
+            if c == '|' {
                 winning_phase = false;
                 my_phase = true;
                 space_space = false;
@@ -46,7 +43,10 @@ pub fn part_one(options: &str) -> Option<u32> {
                         char2 = c.to_digit(10).unwrap() as i32;
                     }
                 };
-            };
+            } else if c == ':' {
+                winning_phase = true;
+                space_space = false;
+            }
         });
         let my_nr = char1 * 10 + char2;
         if winning.contains(&my_nr) {
