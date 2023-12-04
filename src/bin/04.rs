@@ -12,7 +12,7 @@ pub fn part_one(options: &str) -> Option<u32> {
         let mut char1 = -1;
         let mut char2 = -1;
         line.chars().for_each(|c| {
-            if char1 != -1 && char2 != -1 {
+            if char2 != -1 {
                 if winning_phase {
                     let my_nr = char1 * 10 + char2;
                     winning.insert(my_nr);
