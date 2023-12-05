@@ -33,28 +33,29 @@ pub fn part_two(input: &str) -> Option<u32> {
     Some(input
         .lines()
         .map(|line| {
-            let mut first = 0;
-            let mut last = 0;
-            for (i, [_]) in numb_regex.captures_iter(line)
-                .map(|l| { l.extract() })
-            {
-                first = if i.len() == 1 {
-                    i.chars().last().unwrap().to_digit(10).unwrap()
-                } else {
-                    number_as_string_list.iter().position(|s| i == *s).unwrap() as u32 + 1
-                };
-                break;
+            let first = match numb_regex.find(line) {
+                Some(m) => {
+                    let i = m.as_str();
+                    if i.len() == 1 {
+                        i.chars().last().unwrap().to_digit(10).unwrap()
+                    } else {
+                        number_as_string_list.iter().position(|s| i == *s).unwrap() as u32 + 1
+                    }
+                },
+                _ => 0
             };
+
             let rev_line = line.chars().rev().collect::<String>();
-            for (i, [_]) in numb_regex_rev.captures_iter(rev_line.as_str())
-                .map(|l| { l.extract() })
-            {
-                last = if i.len() == 1 {
-                    i.chars().last().unwrap().to_digit(10).unwrap()
-                } else {
-                    number_as_string_list_rev.iter().position(|s| i == *s).unwrap() as u32 + 1
-                };
-                break;
+            let last = match numb_regex_rev.find(rev_line.as_str()) {
+                Some(m) => {
+                    let i = m.as_str();
+                    if i.len() == 1 {
+                        i.chars().last().unwrap().to_digit(10).unwrap()
+                    } else {
+                        number_as_string_list_rev.iter().position(|s| i == *s).unwrap() as u32 + 1
+                    }
+                },
+                _ => 0
             };
             first*10+last
         })
