@@ -37,28 +37,29 @@ pub fn part_one(input: &str) -> Option<u32> {
 }
 
 pub fn part_two(input: &str) -> Option<u64> {
-    let mut race_times_str: Vec<String> = Vec::new();
-    let mut race_lengths_str: Vec<String> = Vec::new();
+    let mut index = 1;
+    let mut race_length = 0;
     let mut race_times = 0;
+    let mut l_time = true;
     input.lines().for_each(|l| {
         let data = l.split_whitespace();
-        if !race_times_str.is_empty() {
-            let r: String = race_times_str.iter().flat_map(|s| s.chars()).collect();
-            race_times = r.parse::<u64>().unwrap();
+        if index != 1 {
+            index = 1;
+            l_time = false;
         }
-        data.for_each(|d| {
-            if d.chars().any(|c| !c.is_numeric()) {} else if race_times == 0 {
-                race_times_str.push(d.to_string());
+        data.rev().for_each(|d| {
+            if d.chars().any(|c| !c.is_numeric()) {} else if l_time {
+                race_times += d.parse::<u64>().unwrap()*index;
+                index *= 10_i32.pow(d.len() as u32) as u64;
             } else {
-                race_lengths_str.push(d.to_string());
+                race_length += d.parse::<u64>().unwrap()*index;
+                index *= 10_i32.pow(d.len() as u32) as u64;
             }
         })
     });
-    let r: String = race_lengths_str.iter().flat_map(|s| s.chars()).collect();
-    let race_length = r.parse::<u64>().unwrap();
 
     let v = (race_times.pow(2) as f64 - 4f64 * race_length as f64).sqrt();
-    Some((0.5 * (race_times as f64 + v)).ceil() as u64 - (0.5 * (race_times as f64 - v)).ceil() as u64)
+    Some(v.floor() as u64)
 }
 
 #[cfg(test)]
