@@ -47,8 +47,7 @@ pub fn part_two(input: &str) -> Option<u64> {
             race_times = r.parse::<u64>().unwrap();
         }
         data.for_each(|d| {
-            if d.chars().any(|c| !c.is_numeric()) {
-            } else if race_times == 0 {
+            if d.chars().any(|c| !c.is_numeric()) {} else if race_times == 0 {
                 race_times_str.push(d.to_string());
             } else {
                 race_lengths_str.push(d.to_string());
@@ -56,17 +55,10 @@ pub fn part_two(input: &str) -> Option<u64> {
         })
     });
     let r: String = race_lengths_str.iter().flat_map(|s| s.chars()).collect();
-    let length = r.parse::<u64>().unwrap();
+    let race_length = r.parse::<u64>().unwrap();
 
-    let mut g_t = 0;
-    // length - race_times*i + i^2 = 0
-    for i in 0..(race_times - 1) {
-        let test = (race_times - i) * i;
-        if test > length {
-            g_t += 1;
-        }
-    }
-    Some(g_t)
+    let v = (race_times.pow(2) as f64 - 4f64 * race_length as f64).sqrt();
+    Some((0.5 * (race_times as f64 + v)).ceil() as u64 - (0.5 * (race_times as f64 - v)).ceil() as u64)
 }
 
 #[cfg(test)]
