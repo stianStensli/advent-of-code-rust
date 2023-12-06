@@ -64,8 +64,6 @@ pub fn part_two(input: &str) -> Option<u64> {
         let test = (race_times - i) * i;
         if test > length {
             g_t += 1;
-        } else if g_t > 0 {
-           return Some(g_t)
         }
     }
     Some(g_t)
