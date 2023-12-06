@@ -1,96 +1,33 @@
 advent_of_code::solution!(5);
 
-fn with_seeds(input: &str, mut seeds: Vec<u32>) -> Option<u32> {
-    let parts: Vec<&str> = input.split(':').collect();
-    for part in 2..parts.len() {
-        let mut touched_seed: Vec<bool> = seeds.iter().map(|_| false).collect();
-        let txt_map: Vec<&str> = parts.get(part).unwrap()
-            .split('\n')
-            .filter(|p| {
-                !(p.is_empty() || p.contains("map"))
-            }).collect();
-
-
-        for single_map in txt_map {
-            let data: Vec<u32> = single_map.split(' ')
-                .map(|seed| {
-                    seed.parse::<u32>().unwrap()
-                }).collect();
-            let destination = data.first().unwrap().to_owned();
-            let source = data.get(1).unwrap().to_owned();
-            let limit = data.get(2).unwrap().to_owned();
-
-            for i in 0..seeds.len() {
-                let seed = seeds[i];
-                if touched_seed[i] {} else if seed >= source && seed < source + limit {
-                    seeds[i] = destination + (seed - source);
-                    touched_seed[i] = true;
-                }
-            }
-        }
-    }
-
-    seeds.iter().min().to_owned().map(|m| m.to_owned())
-}
-
-pub fn part_one(input: &str) -> Option<u32> {
+pub fn part_one(input: &str) -> Option<u64> {
     let lines: Vec<&str> = input.lines().collect();
     let seeds = lines.first()
         .unwrap()
         .replace("seeds: ", "");
-    let seeds: Vec<u32> = seeds.split(' ')
+    let seeds_range: Vec<u64> = seeds.split(' ')
         .map(|seed| {
-            seed.parse::<u32>().unwrap()
+            seed.parse::<u64>().unwrap()
         }).collect();
 
-    with_seeds(input, seeds)
-}
-
-pub fn part_two(input: &str) -> Option<u32> {
-    let lines: Vec<&str> = input.lines().collect();
-    let seeds = lines.first()
-        .unwrap()
-        .replace("seeds: ", "");
-    let seeds_range: Vec<u32> = seeds.split(' ')
-        .map(|seed| {
-            seed.parse::<u32>().unwrap()
-        }).collect();
-
-    let mut seeds = Vec::new();
+    let mut seeds: Vec<SeedRange> = Vec::new();
     let mut j = 0;
-    while j < seeds_range.len() - 1 {
-        for i in seeds_range[j]..seeds_range[j] + seeds_range[j + 1] + 1 {
-            seeds.push(i);
-        }
-        j += 2;
+    while j < seeds_range.len() {
+        seeds.push(SeedRange {
+            start: seeds_range[j],
+            end: seeds_range[j],
+            last_gen_touched: 1,
+        });
+        j += 1;
     }
-    seeds.sort();
-    println!("{}", seeds.len());
-    with_seeds(input, seeds)
+    with_seeds_v2(input, seeds)
 }
 
-
-struct SeedControll {
-    seeds: Vec<SeedRange>
-}
-
-struct SeedRange {
-    start: u64,
-    end: u64,
-}
-
-impl SeedRange {
-    fn print(&self) {
-        println!("start: {}, end: {} ", self.start, self.end);
-    }
-}
-
-pub fn part_two_v2(input: &str) -> Option<u32> {
+pub fn part_two(input: &str) -> Option<u64> {
     let lines: Vec<&str> = input.lines().collect();
     let seeds = lines.first()
         .unwrap()
         .replace("seeds: ", "");
-
 
     let seeds_range: Vec<u64> = seeds.split(' ')
         .map(|seed| {
@@ -102,13 +39,112 @@ pub fn part_two_v2(input: &str) -> Option<u32> {
     while j < seeds_range.len() - 1 {
         seeds.push(SeedRange {
             start: seeds_range[j],
-            end: seeds_range[j + 1] + seeds_range[j],
+            end: seeds_range[j + 1] + seeds_range[j] - 1,
+            last_gen_touched: 1,
         });
-        seeds.last().unwrap().print();
         j += 2;
     }
-    println!("{}", seeds.len());
-    None
+    with_seeds_v2(input, seeds)
+}
+
+fn move_seeds(mut seeds: Vec<SeedRange>, source: u64, limit: u64, gen: u32, destination: u64) -> Vec<SeedRange> {
+    let mut to_be_added: Vec<SeedRange> = Vec::new();
+
+    seeds.iter_mut().for_each(|s| {
+        if s.last_gen_touched != gen {
+            if s.start >= source && s.end < source + limit {
+                // hele flyttes 🎉
+                s.update_end(destination + s.end - source);
+                s.update_start(destination + s.start - source);
+                s.update_gen(gen);
+            } else if s.start >= source && s.start < source + limit {
+                // start flyttes og en ny legges til
+                to_be_added.push(SeedRange {
+                    last_gen_touched: gen - 1,
+                    end: s.end,
+                    start: source + limit,
+                });
+                s.update_end(destination + limit - 1);
+                s.update_start(destination + s.start - source);
+                s.update_gen(gen);
+            } else if s.end >= source && s.end < source + limit {
+                // slutt flyttes og en ny legges til
+                to_be_added.push(SeedRange {
+                    last_gen_touched: gen,
+                    end: destination + s.end - source,
+                    start: destination,
+                });
+                s.update_end(source - 1);
+            } else if s.start < source && s.end >= source + limit {
+                //println!("s.s: {}, s.e: {}, src: {} dest, {}, lim: {}", s.start, s.end, source, destination, limit);
+                // en ny i mellom rangene to legges til
+                to_be_added.push(SeedRange {
+                    last_gen_touched: gen,
+                    end: destination + limit - 1,
+                    start: destination,
+                });
+                // slutt flyttes og en ny legges til
+                to_be_added.push(SeedRange {
+                    last_gen_touched: gen - 1,
+                    end: s.end,
+                    start: source + limit,
+                });
+
+                s.update_end(source - 1);
+            }
+        }
+    });
+
+    to_be_added.iter().for_each(|a| {
+        seeds.push(*a);
+    });
+    seeds
+}
+
+#[derive(Copy, Clone)]
+struct SeedRange {
+    start: u64,
+    end: u64,
+    last_gen_touched: u32,
+}
+
+impl SeedRange {
+    fn update_end(&mut self, newp: u64) {
+        self.end = newp;
+    }
+    fn update_start(&mut self, newp: u64) {
+        self.start = newp;
+    }
+
+    fn update_gen(&mut self, last_gen_touched: u32) {
+        self.last_gen_touched = last_gen_touched;
+    }
+}
+
+
+fn with_seeds_v2(input: &str, mut seeds: Vec<SeedRange>) -> Option<u64> {
+    let parts: Vec<&str> = input.split(':').collect();
+    for part in 2..parts.len() {
+        let txt_map: Vec<&str> = parts.get(part).unwrap()
+            .split('\n')
+            .filter(|p| {
+                !(p.is_empty() || p.contains("map"))
+            }).collect();
+
+        for single_map in txt_map {
+            let data: Vec<u64> = single_map.split(' ')
+                .map(|seed| {
+                    seed.parse::<u64>().unwrap()
+                }).collect();
+            let destination = data.first().unwrap().to_owned();
+            let source = data.get(1).unwrap().to_owned();
+            let limit = data.get(2).unwrap().to_owned();
+            seeds = move_seeds(seeds, source, limit, part as u32, destination);
+        }
+    }
+    seeds.iter()
+        .map(|s| s.start)
+        .min()
 }
 
 #[cfg(test)]
@@ -123,7 +159,6 @@ mod tests {
 
     #[test]
     fn test_part_two() {
-        part_two_v2(&advent_of_code::template::read_file("examples", DAY));
         let result = part_two(&advent_of_code::template::read_file("examples", DAY));
         assert_eq!(result, Some(46));
     }
