@@ -59,7 +59,7 @@ pub fn part_two(input: &str) -> Option<u64> {
     });
 
     let v = (race_times.pow(2) as f64 - 4f64 * race_length as f64).sqrt();
-    Some(v.floor() as u64)
+    Some((0.5 * (race_times as f64 + v)).ceil() as u64 - (0.5 * (race_times as f64 - v)).ceil() as u64)
 }
 
 #[cfg(test)]
