@@ -7,41 +7,38 @@ struct Hand {
     bet: u64,
     score: u32,
 }
-/*
-impl Hand {
-    fn max(o: Hand, b: Hand) {
-        return cmp(o, b);
-    }
-    fn cmp(o: Hand, b: Hand) {}
-    //fun partial_cmp(a, b) == Some(cmp(a, b)).
-    //max(a, b) == max_by(a, b, cmp) (ensured by the default implementation).
-    //min(a, b) == min_by(a, b, cmp) (ensured by the default implementation).
-    //For a.clamp(min, max), see the method docs (ensured by the default implementation).
-}
-*/
 
-fn get_nr_from_card(card: char) -> u32 {
+fn get_nr_from_card_v1(card: char) -> u32 {
+    get_nr_from_card(card, false)
+}
+
+fn get_nr_from_card_v2(card: char) -> u32 {
+    get_nr_from_card(card, true)
+}
+
+fn get_nr_from_card(card: char, is_v2: bool) -> u32 {
     if card.is_numeric() {
-        //println!("{}", card.to_digit(10).unwrap() - 1);
-        card.to_digit(10).unwrap() - 1
+        card.to_digit(10).unwrap()
     } else if card == 'A' {
-        13
+        14
     } else if card == 'K' {
-        12
+        13
     } else if card == 'Q' {
-        11
+        12
+    } else if card == 'J' && is_v2 {
+        0
     } else if card == 'J' {
-        10
+        11
     } else if card == 'T' {
-        9
+        10
     } else {
         println!("what?: {}", card);
         0
     }
 }
 
-fn get_hand_score(cards: [u32; 5]) -> u32 {
-    let mut hand_score = [0; 14];
+fn get_hand_score_v1(cards: [u32; 5]) -> u32 {
+    let mut hand_score = [0; 15];
     cards.iter().for_each(|card| {
         hand_score[*card as usize] += 1;
     });
@@ -77,30 +74,102 @@ fn get_hand_score(cards: [u32; 5]) -> u32 {
     }
 }
 
-pub fn part_one(input: &str) -> Option<u64> {
+fn get_hand_score_v2(cards: [u32; 5]) -> u32 {
+    let mut hand_score = [0; 15];
+    cards.iter()
+        .for_each(|card| {
+            hand_score[*card as usize] += 1;
+        });
+
+    let nr_of_j = hand_score[0];
+    if nr_of_j == 5 || nr_of_j == 4 {
+        return 70;  // 5 of a kind
+    }
+
+    let mut max = 1;
+    let mut max_s = 0;
+
+    hand_score.iter()
+        .skip(1)
+        .for_each(|score| {
+            if *score >= max {
+                max_s = max;
+                max = *score;
+            } else if *score > max_s {
+                max_s = *score;
+            }
+        });
+
+    if nr_of_j == 3 {
+        if max == 1 {
+            return 60 ;  // 4 of a kind
+        } else if max == 2 {
+            return 70 ;// 4 of a kind
+        }
+    }
+
+    if nr_of_j == 2 {
+        if max == 1 {
+            return 40 ; // three of a kind
+        } else if max == 2 {
+            return 60 ; // 4 of a kind
+        } else if max == 3 {
+            return 70 ; // 5 of a kind
+        }
+    }
+
+    if nr_of_j == 1 {
+        if max == 1 {
+            return 20 ; // par
+        } else if max == 2 && max_s == 2 {
+            return 50 ; // house
+        } else if max == 2 {
+            return 40 ; // three of a kind
+        } else if max == 3 {
+            return 60 ; // 4 of a kind
+        } else if max == 4 {
+            return 70 ; // 5 of a kind
+        }
+    }
+
+    if max == 1 {
+        10  // worst hand
+    } else if max == 2 && max_s == 1 {
+        20 // par
+    } else if max == 2 && max_s == 2 {
+        30 // two pars
+    } else if max == 3 && max_s == 1 {
+        40 // three of a kind
+    } else if max == 3 && max_s == 2 {
+        50 // house
+    } else if max == 4 {
+        60 // 4 of a kind
+    } else {
+        70 // 5 of a kind
+    }
+}
+
+fn main_part(input: &str, get_hand_score: &dyn Fn([u32; 5]) -> u32, get_nr_from_card: &dyn Fn(char) -> u32) -> Option<u64> {
     let mut hands = Vec::new();
     input.lines().for_each(|l| {
         let mut index = 0;
-        let mut p_string = "";
         let split = l.split_whitespace();
-        let mut cards = [0;5];
-        let mut hand_score = 0;
-
+        let mut cards = [0; 5];
+        let mut score = 0;
         split.for_each(|s| {
             if index == 0 {
-                p_string = s;
                 let mut j = 0;
                 s.chars().for_each(|card| {
                     cards[j] = get_nr_from_card(card);
-                    j+=1;
+                    j += 1;
                 });
-                hand_score = get_hand_score(cards);
+                score = get_hand_score(cards);
                 index += 1;
             } else {
                 hands.push(Hand {
-                    cards: cards,
+                    cards,
+                    score,
                     bet: s.parse().unwrap(),
-                    score: hand_score,
                 })
             }
         });
@@ -120,10 +189,6 @@ pub fn part_one(input: &str) -> Option<u64> {
             Ordering::Equal
         }
     });
-    /*
-    hands.iter().for_each(|hand| {
-        println!("hand: {}, h_s: {}, b: {}", hand.p_cards, hand.score, hand.bet)
-    });*/
     let mut index = 0;
     Some(hands.iter()
         .map(|hand| {
@@ -133,8 +198,12 @@ pub fn part_one(input: &str) -> Option<u64> {
         .sum())
 }
 
-pub fn part_two(_: &str) -> Option<u32> {
-    None
+pub fn part_one(input: &str) -> Option<u64> {
+    main_part(input, &get_hand_score_v1, &get_nr_from_card_v1)
+}
+
+pub fn part_two(input: &str) -> Option<u64> {
+    main_part(input, &get_hand_score_v2, &get_nr_from_card_v2)
 }
 
 #[cfg(test)]
@@ -143,13 +212,13 @@ mod tests {
 
     #[test]
     fn test_part_one() {
-        let result = part_one(&advent_of_code::template::read_file("inputs", DAY));
-        assert_eq!(result, Some(251287184));
+        let result = part_one(&advent_of_code::template::read_file("examples", DAY));
+        assert_eq!(result, Some(6440));// 251287184
     }
 
     #[test]
     fn test_part_two() {
         let result = part_two(&advent_of_code::template::read_file("examples", DAY));
-        assert_eq!(result, None);
+        assert_eq!(result, Some(5905));
     }
 }
