@@ -74,10 +74,12 @@ pub fn part_two(input: &str) -> Option<u64> {
 
 
     let mut steps = 0;
-    while reached_z.iter().any(|r| !*r) {
+    let mut done = false;
+    while !done {
         for i in 0..reached_z.len() {
             if current[i].ends_with('Z') {
                 reached_z[i] = true;
+                done = reached_z.iter().all(|r| *r);
             }
         }
 
