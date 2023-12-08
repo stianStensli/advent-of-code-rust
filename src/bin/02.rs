@@ -1,16 +1,17 @@
 use std::cmp::max;
 advent_of_code::solution!(2);
 
+const PEAK_RED: u32 = 12;
+const PEAK_GREEN: u32 = 13;
+const PEAK_BLUE: u32 = 14;
+
 pub fn part_one(input: &str) -> Option<u32> {
-    const PEAK_RED: u32 = 12;
-    const PEAK_GREEN: u32 = 13;
-    const PEAK_BLUE: u32 = 14;
     let mut index: u32 = 0;
     Some(input.lines().map(|game| {
         let rounds = game.split(':').skip(1).last().unwrap().split(';');
-        let mut peak_red: u32 = 0;
-        let mut peak_green: u32 = 0;
-        let mut peak_blue: u32 = 0;
+        let mut peak_red = 0;
+        let mut peak_green = 0;
+        let mut peak_blue = 0;
         rounds.for_each(|round| {
             let mut last_number = 0;
             round.split(' ').for_each(|v| {
