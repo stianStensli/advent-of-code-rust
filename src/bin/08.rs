@@ -82,19 +82,23 @@ fn get_nr_of_steps_v2(rules: &[char],  nodes: &[Option<Node>; 17578], start: usi
     }
 }
 fn v_from_string(input: &str)-> usize {
-    input.chars().fold(1,|a,c| {
+    let mut i = 0;
+    let res: usize =input.chars().map(|c| {
+        i += 1;
         if c.is_numeric(){
             let dig = c.to_digit(10).unwrap() as usize;
-            return a*dig
+            (26_i32.pow(i-1) as usize)*dig
+        }else {
+            (26_i32.pow(i-1) as usize)*(c as usize-65)
         }
-        a*(c as usize-64)
-    }) + 1
+    }).sum();
+    res + 1
 }
 pub fn part_two(input: &str) -> Option<u64> {
     let mut lines = input.lines();
     let rules: Vec<char> = lines.next().unwrap().chars().collect();
     let mut current = Vec::new();
-    let mut node_map:[Option<Node>; 17578] =[None;17578];
+    let mut node_map:[Option<Node>; 17578] = [None;17578];
 
     lines.map(|line| {
         line.split(" =")
