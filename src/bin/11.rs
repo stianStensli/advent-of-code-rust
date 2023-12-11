@@ -1,4 +1,3 @@
-use std::cmp::{max, min};
 advent_of_code::solution!(11);
 
 fn explode_space(input: &str) -> Vec<Vec<char>> {
@@ -90,23 +89,11 @@ pub fn part_one(input: &str) -> Option<u32> {
     Some(sum)
 }
 
-const EXPANSE_LENGTH: u64 = 1000000;
-
-fn diff_v2(i: u64, o: u64, expanse: Vec<bool>) -> u64 {
-    let mut org_diff = diff_u64(i, o);
-    for j in min(i, o)..max(o, i) {
-        if expanse[j as usize] {
-            org_diff += EXPANSE_LENGTH - 1;
-        }
-    }
-    org_diff
-}
-/*
+const EXPANSE_LENGTH: u64 = 1_000_000 -1;
 
 fn diff_v2(i: u64, o: u64, expanse_s: u32, expanse_e: u32) -> u64 {
-    diff_u64(i, o) + (EXPANSE_LENGTH * diff(expanse_s, expanse_e)) as u64
+    diff_u64(i, o) + (EXPANSE_LENGTH * diff(expanse_s, expanse_e) as u64)
 }
- */
 
 pub fn part_two(input: &str) -> Option<u64> {
     let mut space: Vec<Vec<char>> = Vec::new();
@@ -139,11 +126,26 @@ pub fn part_two(input: &str) -> Option<u64> {
         row += 1;
     });
 
+    let mut acc = 0;
+    let explod_col_nr: Vec<u32> = explod_col.iter().map(|v| {
+        if *v {
+            acc += 1
+        }
+        acc
+    } ).collect();
+    acc = 0;
+    let explod_row_nr: Vec<u32> = explod_row.iter().map(|v| {
+        if *v {
+            acc += 1
+        }
+        acc
+    } ).collect();
 
     let mut sum: u64 = 0;
     for i in 0..stars.len() {
         for j in i + 1..stars.len() {
-            sum += diff_v2(stars[i].row as u64, stars[j].row as u64, explod_row.clone()) + diff_v2(stars[i].col as u64, stars[j].col as u64, explod_col.clone())
+            sum += diff_v2(stars[i].row as u64, stars[j].row as u64, explod_row_nr[stars[i].row as usize],explod_row_nr[stars[j].row as usize]) +
+                diff_v2(stars[i].col as u64, stars[j].col as u64, explod_col_nr[stars[i].col as usize],explod_col_nr[stars[j].col as usize])
         }
     }
 
