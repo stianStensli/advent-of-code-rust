@@ -15,7 +15,7 @@ fn place_first(input: &str, nr_groups: &Vec<u32>) -> u32 {
     }).collect::<String>();
 
 
-    while next_problem.contains('?') {
+    while next_problem.contains('?') && !is_definitly_not_possible(next_problem.as_str(), &nr_groups) {
         nr_of_possible += place_first(next_problem.as_str(), nr_groups);
         let mut has_placed = false;
         next_problem = next_problem.chars().map(|c| {
@@ -45,33 +45,31 @@ struct GNode {
 }
 
 fn is_possible(problem: &str, nr_groups: &Vec<u32>) -> bool {
-    //println!("\n");
-    let mut groups: Vec<GNode> = Vec::new();
+    let mut groups: Vec<u32> = Vec::new();
     problem.split('.').for_each(|s| {
-        if s.len() > 0 {
-            //print!("s: {}", s);
-            groups.push(GNode {
-                size: s.len() as u32,
-                forced: s.chars().filter(|c| c == &'#').count() as u32,
-            })
+        if !s.is_empty() {
+            groups.push(s.len() as u32);
         }
     });
-    //println!("\n");
     if groups.len() != nr_groups.len() {
-        //println!("Is not possible: {}, g: {:?}, nr_g: {:?}", problem, groups, nr_groups);
         return false;
     }
 
-    let res = groups.iter().zip(nr_groups.iter()).all(|(springs, springs_real)| springs.forced == *springs_real);
-    /*
-    if res {
-        println!("Is possible: {}, g: {:?}, nr_g: {:?}", problem, groups, nr_groups);
-    } else {
-        println!("Is not possible: {}, g: {:?}, nr_g: {:?}", problem, groups, nr_groups);
-    }*/
-    res
+    groups.iter().zip(nr_groups.iter()).all(|(springs, springs_real)| springs == springs_real)
 }
 
+/*
+
+    let groups_size: Vec<u32> = problem.split('.').map(|s| s.len() as u32).collect();
+    let groups_forced: Vec<u32> = problem.split(['.', '?']).map(|s| s.len() as u32).filter(|x| x > &0).collect();
+
+    let nr_of_springs: u32 = groups_forced.iter().sum();
+    let nr_of_poss: u32 = groups_size.iter().sum();
+    let nr_of_springs_real: u32 = nr_groups.iter().sum();
+    if nr_of_springs > nr_of_springs_real || nr_of_poss < nr_of_springs_real {
+        return true;
+    }
+ */
 fn is_definitly_not_possible(problem: &str, nr_groups: &Vec<u32>) -> bool {
     // #.#.### 1,1,3
     let groups: Vec<GNode> = problem.split('.').map(|s| {
@@ -86,18 +84,33 @@ fn is_definitly_not_possible(problem: &str, nr_groups: &Vec<u32>) -> bool {
     if nr_of_springs > nr_of_springs_real || nr_of_poss < nr_of_springs_real {
         return true;
     }
-    if !problem.contains('?') {
-        if groups.len() != nr_groups.len() {
-            return true;
-        }
-        return !groups.iter().zip(nr_groups.iter()).all(|(springs, springs_real)| springs.forced == *springs_real);
-    }
+
+    /*
+    let mut index = 0;
+    //groups.iter().map(|g|g.forced).max().unwrap() > *nr_groups.iter().max().unwrap()
+    //false
+    let r = groups_forced.iter()
+        .any(|g| {
+            for i in index..nr_groups.len() {
+                index = i + 1;
+                if *g <= nr_groups[i] {
+                    return false;
+                }
+            }
+            if index == nr_groups.len() {
+                return true;
+            }
+            false
+        });
+
+    println!("r: {}, prob: {}, nr_groups: {:?}, g: {:?}", r, problem, nr_groups, groups_forced);
+    r*/
     false
 }
 
 
 fn main_stuff(input: &str) -> u32 {
-    println!("problem: {}", input);
+    //println!("problem: {}", input);
     let mut input = input.split(' ');
     let problem: &str = input.next().unwrap();
     let nr_groups: Vec<u32> = input.next().unwrap().split(',').map(|e| e.parse::<u32>().unwrap()).collect();
@@ -105,7 +118,7 @@ fn main_stuff(input: &str) -> u32 {
     let mut next_problem: String = problem.to_string();
     let mut nr_of_possible = 0;
 
-    while next_problem.contains('?') {
+    while next_problem.contains('?') && !is_definitly_not_possible(next_problem.as_str(), &nr_groups) {
         nr_of_possible += place_first(next_problem.as_str(), &nr_groups);
         let mut has_placed = false;
         next_problem = next_problem.chars().map(|c| {
@@ -118,7 +131,7 @@ fn main_stuff(input: &str) -> u32 {
         }).collect::<String>();
     }
     if is_possible(next_problem.as_str(), &nr_groups) {
-        println!("Is possible: {}, {:?}", next_problem, nr_groups);
+        //println!("Is possible: {}, {:?}", next_problem, nr_groups);
         nr_of_possible += 1;
     }
 
