@@ -1,7 +1,7 @@
 advent_of_code::solution!(12);
 
 
-fn place_first(input: Option<Vec<char>>, nr_groups: &Vec<u32>) -> u64 {
+fn place_first(input: Option<Vec<char>>, nr_groups: &Vec<u32>) -> u32 {
     if input.is_none() {
         return 0;
     }
@@ -86,20 +86,23 @@ fn next_move_good(problem: Vec<char>, nr_groups: &Vec<u32>, place: bool) -> Opti
                     None
                 }
             } else {
-                /*
+
                 if  index < nr_groups.len() {
                     let mut rest_sum = nr_groups[index];
                     for j in index + 1..nr_groups.len() {
-                        rest_sum += nr_groups[j] + 1;
+                        rest_sum += nr_groups[j];
                     }
-                    if rest_sum > (chars.len() - i) as u32{
-                        let p: String = chars.iter().collect();
-                        //println!("prob: {}", p);
-                        //println!("rest_sum: {}, i: {}, c: {}", rest_sum, i, chars.len());
+                    if rest_sum < nr_of_gears {
+                        return None
+
+                    }
+                    if rest_sum - nr_of_gears > (chars.len() - i -1) as u32{
+                        //let p: String = chars.iter().collect();
+                        //println!("prob: {}, sum: {}", p, chars.len() - i -1);
+                        //println!("rest_sum: {}, i: {}, c: {}", rest_sum-nr_of_gears, i, chars.len());
                         return None
                     }
                 }
-                 */
                 if is_pre_init ||
                     (i > 0 && chars[i - 1] == '.') ||
                     (index < nr_groups.len() && nr_of_gears == nr_groups[index]) {
@@ -118,7 +121,7 @@ fn next_move_good(problem: Vec<char>, nr_groups: &Vec<u32>, place: bool) -> Opti
 }
 
 
-fn main_stuff(input: &str) -> u64 {
+fn main_stuff(input: &str) -> u32 {
     //println!("Main: {}", input);
     let mut input = input.split(' ');
     let problem: Vec<char> = input.next().unwrap().chars().collect();
@@ -128,7 +131,7 @@ fn main_stuff(input: &str) -> u64 {
     res
 }
 
-pub fn part_one(input: &str) -> Option<u64> {
+pub fn part_one(input: &str) -> Option<u32> {
     Some(input.lines().map(main_stuff).sum())
 }
 
@@ -151,7 +154,7 @@ fn fold_5(input: &str) -> String {
 }
 
 pub fn part_two(input: &str) -> Option<u64> {
-    //Some(input.lines().map(fold_5).map(|s| main_stuff(s.as_str())).sum())
+    //Some(input.lines().map(fold_5).map(|s| main_stuff(s.as_str())).map(|a| a as u64).sum())
     None
 }
 
@@ -161,7 +164,7 @@ mod tests {
 
     #[test]
     fn test_part_one() {
-        let result = part_one(&advent_of_code::template::read_file("examples", DAY));
+        let result = part_one(&advent_of_code::template::read_file("inputs", DAY));
         assert_eq!(result, Some(21));
     }
 
