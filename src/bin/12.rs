@@ -1,133 +1,149 @@
 advent_of_code::solution!(12);
 
-
-fn place_first(input: Option<Vec<char>>, nr_groups: &Vec<u32>) -> u32 {
-    if input.is_none() {
-        return 0;
-    }
-    let input = input.unwrap();
-    //let input_clone: String = input.clone().iter().collect();
-    if !input.contains(&'?') {
-        if is_possible(input, nr_groups) {
-            //  println!("possible: {}", input_clone);
+fn place_first_group(input: &Vec<Vec<bool>>, nr_groups: &Vec<u32>) -> u32 {
+    println!("---");
+    println!("in: {:?}",input);
+    println!("g: {:?}",nr_groups);
+    println!("---");
+    if input.is_empty() {
+        if nr_groups.is_empty() {
+            println!("yes!!");
             return 1;
         }
-        //println!("not possible: {}", input_clone);
+        println!("no: nr_g: {:?}", nr_groups);
         return 0;
     }
-    place_first(next_move_good(input.clone(), nr_groups, true), nr_groups) +
-        place_first(next_move_good(input, nr_groups, false), nr_groups)
-}
+    if nr_groups.is_empty() {
+        if input.iter().all(|v| v.iter().all(|w| !*w)) {
+            println!("yes!!");
+            return 1;
+        }
+        println!("nope input: {:?}", input);
+        return 0;
+    }
+    let place_group = input.first().unwrap().clone();
+    let mut nr_of_springs = 0;
 
-// ????????.##.?.?##..??? 1,2,3
-// s:(8,0),s:(2,2), s:(1,0), s:(3,2), s:(3,0)
-
-
-fn is_possible(problem: Vec<char>, nr_groups: &Vec<u32>) -> bool {
-    let mut g_index = 0;
-    let mut numb_gear = 0;
-
-    //let input_clone: String = problem.clone().iter().collect();
-    //println!("prob: {}", input_clone);
-    for i in 0..problem.len() {
-        if problem[i] == '.' {
-            if numb_gear > 0 {
-                //println!("Sceck: i {}, g_i: {}, gears: {}", i, g_index, numb_gear);
-                if g_index >= nr_groups.len() {
-                    return false;
-                }
-                if nr_groups[g_index] != numb_gear {
-                    //println!("r: {:?}", nr_groups);
-                    // println!("wrong: {},{}, {}",g_index,nr_groups[g_index],numb_gear);
-                    return false;
-                }
-                g_index += 1;
+    let mut res = 0;
+    let next_nr_group = *nr_groups.first().unwrap();
+    // try place
+    for i in 0..place_group.len() {
+        if !place_group[i] {
+            // hvis nr_of_springs er mer enn neste gruppe: ##x 1
+            if nr_of_springs > next_nr_group {
+                println!("too many: . input: {:?}, g: {:?}", input, nr_groups);
+                return res;
             }
-            numb_gear = 0;
-        } else {
-            numb_gear += 1;
-        }
-    }
-    if numb_gear > 0 {
-        if g_index >= nr_groups.len() {
-            return false;
-        }
-        if nr_groups[g_index] != numb_gear {
-            return false;
-        }
-        g_index += 1;
-    }
-    if g_index != nr_groups.len() {
-        return false;
-    }
-    true
-}
+            if nr_of_springs == 0 || nr_of_springs == next_nr_group{
+                let mut next_groups: Vec<Vec<bool>> = Vec::new();
+                let mut next_nr_groups = nr_groups.clone();
 
-fn next_move_good(problem: Vec<char>, nr_groups: &Vec<u32>, place: bool) -> Option<Vec<char>> {
-    let mut chars: Vec<char> = problem;
-    let mut index = 0;
-    let mut nr_of_gears = 0;
-    let mut is_pre_init = true;
+                // hvis nr_of_springs er mer enn null: #x 1 "fjern neste gruppe"
+                if nr_of_springs == next_nr_group {
+                    next_nr_groups.remove(0);
+                }
 
-    for i in 0..chars.len() {
-        let c = chars[i];
-        if c == '#' {
-            nr_of_gears += 1;
-            is_pre_init = false;
-        } else if c == '.' && nr_of_gears > 0 {
-            index += 1;
-            nr_of_gears = 0;
-        } else if c == '?' {
-            return if place {
-                if index < nr_groups.len() && nr_of_gears < nr_groups[index] {
-                    chars[i] = '#';
-                    Some(chars)
+                for j in 1..input.len() {
+                    next_groups.push(input[j].clone())
+                }
+                if i == place_group.len() - 1 {
+                    res += place_first_group(&next_groups, &next_nr_groups);
                 } else {
-                    None
+                    let mut next_prob = Vec::new();
+                    for j in i + 1..place_group.len() {
+                        next_prob.push(place_group[j])
+                    }
+                    next_groups.insert(0, next_prob);
+                    res += place_first_group(&next_groups, &next_nr_groups)
                 }
             } else {
+                println!("ignoring . placement");
+            }
+            // place group...
+            nr_of_springs += 1;
+            if nr_of_springs > next_nr_group {
+                println!("no: # input: {:?}, g: {:?}", input, nr_groups);
+                return res
+            }
 
-                if  index < nr_groups.len() {
-                    let mut rest_sum = nr_groups[index];
-                    for j in index + 1..nr_groups.len() {
-                        rest_sum += nr_groups[j];
-                    }
-                    if rest_sum < nr_of_gears {
-                        return None
+            let mut next_groups: Vec<Vec<bool>> = Vec::new();
+            let mut next_nr_groups = nr_groups.clone();
+            for j in 1..input.len() {
+                next_groups.push(input[j].clone())
+            }
+            if i == place_group.len() - 1 {
+                if nr_of_springs != next_nr_group {
+                    println!("no happy: # input: {:?}, g: {:?}", input, nr_groups);
+                    return res
+                }
+                //happy!
 
-                    }
-                    if rest_sum - nr_of_gears > (chars.len() - i -1) as u32{
-                        //let p: String = chars.iter().collect();
-                        //println!("prob: {}, sum: {}", p, chars.len() - i -1);
-                        //println!("rest_sum: {}, i: {}, c: {}", rest_sum-nr_of_gears, i, chars.len());
-                        return None
+                next_nr_groups.remove(0);
+                println!("happy placed: p_{:?}, g_{:?}", input, nr_groups);
+                println!("happy placed?: p_{:?}, g_{:?}", next_groups, next_nr_groups);
+                res += place_first_group(&next_groups, &next_nr_groups);
+                return res
+            } else {
+                let mut next_prob = Vec::new();
+                for j in 0..place_group.len() {
+                    if j == i {
+                        next_prob.push(true);
+                    } else {
+                        next_prob.push(place_group[j]);
                     }
                 }
-                if is_pre_init ||
-                    (i > 0 && chars[i - 1] == '.') ||
-                    (index < nr_groups.len() && nr_of_gears == nr_groups[index]) {
-                    chars[i] = '.';
-                    Some(chars)
-                } else {
-                    //chars[i] = '.';
-                    //let r: String = chars.iter().collect();
-                    //println!("Nope: {}", r);
-                    None
-                }
-            };
+                next_groups.insert(0, next_prob);
+                println!("just placed: p_{:?}, g_{:?}", input, nr_groups);
+                println!("just placed?: p_{:?}, g_{:?}", next_groups, next_nr_groups);
+                res += place_first_group(&next_groups, &next_nr_groups);
+
+                return res
+            }
+        } else {
+            nr_of_springs += 1;
         }
     }
-    None
+    if nr_of_springs == next_nr_group {
+        let mut next_nr_groups = nr_groups.clone();
+        next_nr_groups.remove(0);
+        let mut next_groups: Vec<Vec<bool>> = Vec::new();
+        for j in 1..input.len() {
+            next_groups.push(input[j].clone())
+        }
+        println!("trying: p_{:?}, g_{:?}", input, nr_groups);
+        res += place_first_group(&next_groups, &next_nr_groups)
+    }
+    println!("done!");
+    res
 }
 
-
 fn main_stuff(input: &str) -> u32 {
-    //println!("Main: {}", input);
+    println!("Main: {} \n", input);
     let mut input = input.split(' ');
-    let problem: Vec<char> = input.next().unwrap().chars().collect();
+    let problem_str: &str = input.next().unwrap();
+    let groups: Vec<Vec<bool>> = problem_str
+        .split('.')
+        .filter(|s| !s.is_empty())
+        .map(|str| str.chars()
+            .map(|c| c == '#')
+            .collect()
+        ).collect();
+    groups.iter().for_each(|i| {
+        i.iter().for_each(|v| {
+            if *v {
+                print!("#")
+            } else {
+                print!("?")
+            }
+        });
+        println!("");
+    });
+
     let nr_groups: Vec<u32> = input.next().unwrap().split(',').map(|e| e.parse::<u32>().unwrap()).collect();
-    let res = place_first(Some(problem), &nr_groups);
-    //println!("res: {}", res);
+
+    let res = place_first_group(&groups,&nr_groups);
+    println!("Problem: {}",problem_str);
+    println!("result: {}",res);
     res
 }
 
