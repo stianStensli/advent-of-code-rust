@@ -25,8 +25,11 @@ fn place_first_group(input: Vec<Vec<bool>>, nr_groups: Vec<u32>) -> u64 {
         if !place_group[i] {
             // hvis nr_of_springs er mer enn neste gruppe: ##x 1
             if nr_of_springs > next_nr_group {
+                // f.eks (##?), (1)
                 return res;
             }
+
+            // f.eks (#??), (1) eller (???), (1)
             if nr_of_springs == 0 || nr_of_springs == next_nr_group{
                 let mut next_groups: Vec<Vec<bool>> = Vec::new();
                 let mut next_nr_groups = nr_groups.clone();
@@ -40,8 +43,10 @@ fn place_first_group(input: Vec<Vec<bool>>, nr_groups: Vec<u32>) -> u64 {
                     next_groups.push(input[j].clone())
                 }
                 if i == place_group.len() - 1 {
+                    // f.eks (#?), (1)
                     res += place_first_group(next_groups, next_nr_groups);
                 } else {
+                    // f.eks (??), (1)
                     let mut next_prob = Vec::new();
                     for j in i + 1..place_group.len() {
                         next_prob.push(place_group[j])
@@ -63,13 +68,16 @@ fn place_first_group(input: Vec<Vec<bool>>, nr_groups: Vec<u32>) -> u64 {
             }
             if i == place_group.len() - 1 {
                 if nr_of_springs != next_nr_group {
+                    // f.eks (#?), (3)
                     return res
                 }
                 //happy placed!
+                // f.eks (##?), (3)
                 next_nr_groups.remove(0);
                 res += place_first_group(next_groups, next_nr_groups);
                 return res
             } else {
+                // f.eks (#???), (3)
                 let mut next_prob = Vec::new();
                 for j in 0..place_group.len() {
                     if j == i {
@@ -87,6 +95,7 @@ fn place_first_group(input: Vec<Vec<bool>>, nr_groups: Vec<u32>) -> u64 {
             nr_of_springs += 1;
         }
     }
+    // f.eks (###), (3)
     if nr_of_springs == next_nr_group {
         let mut next_nr_groups = nr_groups.clone();
         next_nr_groups.remove(0);
@@ -138,7 +147,7 @@ fn fold_5(input: &str) -> String {
 }
 
 pub fn part_two(input: &str) -> Option<u64> {
-    Some(input.lines().map(fold_5).map(|s| main_stuff(s.as_str())).map(|a| a as u64).sum())
+    Some(input.lines().map(fold_5).map(|s| main_stuff(s.as_str())).sum())
 }
 
 #[cfg(test)]
