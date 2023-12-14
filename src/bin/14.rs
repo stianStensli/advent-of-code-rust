@@ -1,7 +1,33 @@
-use cached::proc_macro::cached;
+use std::collections::hash_map::DefaultHasher;
+use std::collections::HashMap;
+use std::hash::{Hash, Hasher};
+
 advent_of_code::solution!(14);
 
-#[cached]
+pub fn part_one(input: &str) -> Option<u32> {
+    let max_row = input.lines().next().unwrap().len();
+    let mut stones_index: Vec<u32> = vec![0; max_row];
+    let max_row: u32 = max_row as u32;
+
+    let mut r_index = 0;
+    let mut res = 0;
+    input.lines().for_each(|l| {
+        let mut c_index = 0;
+        l.chars().for_each(|c| {
+            if c == 'O' {
+                let old_index = stones_index[c_index];
+                res += max_row - old_index;
+                stones_index[c_index] += 1;
+            } else if c == '#' {
+                stones_index[c_index] = r_index + 1;
+            }
+            c_index += 1;
+        });
+        r_index += 1;
+    });
+    Some(res)
+}
+
 fn tilt_east(input: Vec<Vec<char>>) -> Vec<Vec<char>> {
     let mut stones_2: Vec<Vec<char>> = vec![vec!['.'; input[0].len()]; input.len()];
     let mut r_index = 0;
@@ -20,16 +46,9 @@ fn tilt_east(input: Vec<Vec<char>>) -> Vec<Vec<char>> {
         });
         r_index += 1;
     });
-    /*
-    println!("\nloop");
-    stones_2.iter().for_each(|l| {
-        print!("\n");
-        l.iter().for_each(|v| print!("{}",v))
-    });*/
     stones_2
 }
 
-#[cached]
 fn tilt_west(input: Vec<Vec<char>>) -> Vec<Vec<char>> {
     let mut stones_2: Vec<Vec<char>> = vec![vec!['.'; input[0].len()]; input.len()];
     let mut r_index = 0;
@@ -51,7 +70,6 @@ fn tilt_west(input: Vec<Vec<char>>) -> Vec<Vec<char>> {
     stones_2
 }
 
-#[cached]
 fn tilt_south(input: Vec<Vec<char>>) -> Vec<Vec<char>> {
     let mut stones_2: Vec<Vec<char>> = vec![vec!['.'; input[0].len()]; input.len()];
 
@@ -77,7 +95,6 @@ fn tilt_south(input: Vec<Vec<char>>) -> Vec<Vec<char>> {
     stones_2
 }
 
-#[cached]
 fn tilt_north(input: Vec<Vec<char>>) -> Vec<Vec<char>> {
     let max_row = input[0].len();
     let mut stones_2: Vec<Vec<char>> = vec![Vec::new(); max_row];
@@ -111,54 +128,49 @@ fn tilt_north(input: Vec<Vec<char>>) -> Vec<Vec<char>> {
     res
 }
 
-pub fn part_one(input: &str) -> Option<u32> {
-    let max_row = input.lines().next().unwrap().len();
-    let mut stones_index: Vec<u32> = vec![0; max_row];
-    let max_row: u32 = max_row as u32;
-
-    let mut r_index = 0;
-    let mut res = 0;
-    input.lines().for_each(|l| {
-        let mut c_index = 0;
-        l.chars().for_each(|c| {
-            if c == 'O' {
-                let old_index = stones_index[c_index];
-                res += max_row - old_index;
-                stones_index[c_index] += 1;
-            } else if c == '#' {
-                stones_index[c_index] = r_index + 1;
-            }
-            c_index += 1;
-        });
-        r_index += 1;
-    });
-    Some(res)
-}
-
 fn tumble(input: Vec<Vec<char>>, n: u32) -> u32 {
+    let mut prev_stuf = HashMap::new();
     let mut tumbled_value = input;
     let max_row = tumbled_value[0].len() as u32;
-    for _ in 0..n {
-        tumbled_value = tilt_east(tilt_south(tilt_west(tilt_north(tumbled_value))));
-    }
-    let mut r_index: u32 = 0;
-    tumbled_value.iter().map(|l| {
-        let r: u32 = l.iter().map(|v| {
-            let o = if *v == 'O' {
-                max_row - r_index
+
+    let mut index_to_hashed = 0;
+    let mut loop_length = 0;
+    for index in 0..n {
+        let r = tilt_east(tilt_south(tilt_west(tilt_north(tumbled_value))));
+        if index_to_hashed == 0 {
+            let mut hash = DefaultHasher::new();
+            r.hash(&mut hash);
+            let hash_of_r = hash.finish();
+
+            let first_placed = prev_stuf.get(&hash_of_r);
+            if first_placed.is_some() {
+                index_to_hashed = index;
+                loop_length = index - first_placed.unwrap();
             } else {
-                0
-            };
-            o
-        }).sum();
-        r_index += 1;
-        r
-    }).sum()
+                prev_stuf.insert(hash_of_r, index);
+            }
+        }
+        if index_to_hashed != 0 && (n - index -1) % loop_length == 0 {
+            let mut r_index: u32 = 0;
+            return r.iter().map(|l| {
+                let r: u32 = l.iter().map(|v| {
+                    if *v == 'O' {
+                        max_row - r_index
+                    } else {
+                        0
+                    }
+                }).sum();
+                r_index += 1;
+                r
+            }).sum();
+        }
+        tumbled_value = r;
+    }
+    0
 }
 
 pub fn part_two(input: &str) -> Option<u32> {
-    //102657
-    Some(tumble(input.lines().map(|l| l.chars().collect()).collect(), 1000))
+    Some(tumble(input.lines().map(|l| l.chars().collect()).collect(), 1000000000))
 }
 
 #[cfg(test)]
@@ -173,7 +185,7 @@ mod tests {
 
     #[test]
     fn test_part_two() {
-        let result = part_two(&advent_of_code::template::read_file("examples", DAY));
+        let result = part_two(&advent_of_code::template::read_file("inputs", DAY));
         assert_eq!(result, Some(64));
     }
 }

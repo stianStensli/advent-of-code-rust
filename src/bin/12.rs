@@ -26,7 +26,7 @@ fn place_first_group(input: Vec<Vec<bool>>, nr_groups: Vec<u32>) -> u64 {
             // hvis nr_of_springs er mer enn neste gruppe: ##x 1
             if nr_of_springs > next_nr_group {
                 // f.eks (##?), (1)
-                return res;
+                return 0;
             }
 
             // f.eks (#??), (1) eller (???), (1)
