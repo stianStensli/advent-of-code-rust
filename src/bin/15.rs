@@ -1,4 +1,10 @@
 advent_of_code::solution!(15);
+/*
+#[derive(Copy, Clone)]
+struct Lens {
+    focal_length: u64,
+    label: String
+}*/
 
 fn hash_fn_old(input: Vec<char>) -> u64 {
     input.iter().fold(0, |current_value, c| {
