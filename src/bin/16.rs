@@ -2,7 +2,7 @@ use crate::Direction::{Down, Left, Rigth, Up};
 use std::cmp::max;
 advent_of_code::solution!(16);
 
-#[derive(Clone, Copy, PartialEq, Debug)]
+#[derive(Clone, Copy, PartialEq)]
 enum Direction {
     Up,
     Down,
@@ -10,18 +10,69 @@ enum Direction {
     Rigth,
 }
 
+#[derive(Clone)]
+struct LDirection {
+    up: bool,
+    down: bool,
+    left: bool,
+    rigth: bool,
+}
+
 struct Light {
     dir: Direction,
     c: usize,
     r: usize,
 }
+fn any_dir(b: &LDirection) -> bool {
+    b.left || b.up || b.down || b.rigth
+}
 
-fn update_res_board(l: &Light, res: &Vec<Direction>) -> Vec<Direction> {
-    let mut new_res = res.clone();
-    if !new_res.contains(&l.dir) {
-        new_res.push(l.dir)
+fn update_res_board(l: &Light, res: &LDirection) -> Option<LDirection> {
+    if l.dir == Left {
+        if res.left {
+            return None;
+        }
+        return Some(LDirection {
+            left: true,
+            rigth: res.rigth,
+            down: res.down,
+            up: res.up,
+        });
     }
-    new_res
+    if l.dir == Rigth {
+        if res.rigth {
+            return None;
+        }
+        return Some(LDirection {
+            left: res.left,
+            rigth: true,
+            down: res.down,
+            up: res.up,
+        });
+    }
+    if l.dir == Up {
+        if res.up {
+            return None;
+        }
+        return Some(LDirection {
+            left: res.left,
+            rigth: res.rigth,
+            down: res.down,
+            up: true,
+        });
+    }
+    if l.dir == Down {
+        if res.down {
+            return None;
+        }
+        return Some(LDirection {
+            left: res.left,
+            rigth: res.rigth,
+            down: true,
+            up: res.up,
+        });
+    }
+    None
 }
 
 fn get_dir_node(l: &Light, next_dir: Direction, max_r: usize, max_c: usize) -> Option<Light> {
@@ -70,13 +121,23 @@ fn get_dir_node(l: &Light, next_dir: Direction, max_r: usize, max_c: usize) -> O
 }
 
 fn main_part(board: &Vec<Vec<char>>, start: Light) -> u64 {
-    let mut res: u64 = 0;
-    let mut res_board: Vec<Vec<Vec<Direction>>> =
-        vec![vec![Vec::new(); board[0].len()]; board.len()];
-    let mut stack: Vec<Light> = vec![start];
-
     let max_r = board.len();
     let max_c = board[0].len();
+    let mut res: u64 = 0;
+    let mut res_board: Vec<Vec<LDirection>> = vec![
+        vec![
+            LDirection {
+                rigth: false,
+                left: false,
+                down: false,
+                up: false,
+            };
+            max_c
+        ];
+        max_r
+    ];
+    let mut stack: Vec<Light> = vec![start];
+
     while let Some(current) = stack.pop() {
         let mut new_ligth: Vec<Light> = Vec::new();
         let b_v = board[current.r][current.c];
@@ -163,22 +224,23 @@ fn main_part(board: &Vec<Vec<char>>, start: Light) -> u64 {
             }
         }
         let r_old = &res_board[current.r][current.c];
-        let r_old_length = r_old.len();
+        let any_dir = any_dir(r_old);
 
-        let new_res = update_res_board(&current, r_old);
-        if r_old_length == 0 {
+        if !any_dir {
             res += 1;
         }
-        if r_old_length < new_res.len() {
+        let new_res = update_res_board(&current, r_old);
+        if let Some(new_res) = new_res {
             while let Some(l) = new_ligth.pop() {
                 stack.push(l)
             }
+            res_board[current.r][current.c] = new_res;
         }
-        res_board[current.r][current.c] = new_res;
     }
 
     res
 }
+
 fn get_board(input: &str) -> Vec<Vec<char>> {
     let mut board: Vec<Vec<char>> = Vec::new();
     input.lines().for_each(|l| {
