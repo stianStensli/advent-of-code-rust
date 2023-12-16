@@ -80,100 +80,84 @@ fn main_part(board: &Vec<Vec<char>>, start: Light) -> u64 {
     while let Some(current) = stack.pop() {
         let mut new_ligth: Vec<Light> = Vec::new();
         let b_v = board[current.r][current.c];
-        /*
-        println!(
-            "current: {}, dir: {:?}, r: {}, c: {}",
-            b_v, current.dir, current.r, current.c
-        );
-        prin");
-        res_board.iter().for_each(|l| {
-            l.iter().for_each(|v| {
-                if v.is_empty() {
-                    print!(".")
-                } else {
-                    print!("#")
-                }
-            });
-            print!("\n");
-        });*/
-        match current.dir {
-            Rigth => {
-                if b_v == '|' {
+
+        match b_v {
+            '|' => match current.dir {
+                Rigth | Left => {
                     if let Some(opt) = get_dir_node(&current, Down, max_r, max_c) {
                         new_ligth.push(opt)
                     }
                     if let Some(opt) = get_dir_node(&current, Up, max_r, max_c) {
                         new_ligth.push(opt)
                     }
-                } else if b_v == '\\' {
+                }
+                _ => {
+                    if let Some(opt) = get_dir_node(&current, current.dir, max_r, max_c) {
+                        new_ligth.push(opt)
+                    }
+                }
+            },
+            '-' => match current.dir {
+                Up | Down => {
+                    if let Some(opt) = get_dir_node(&current, Left, max_r, max_c) {
+                        new_ligth.push(opt)
+                    }
+                    if let Some(opt) = get_dir_node(&current, Rigth, max_r, max_c) {
+                        new_ligth.push(opt)
+                    }
+                }
+                _ => {
+                    if let Some(opt) = get_dir_node(&current, current.dir, max_r, max_c) {
+                        new_ligth.push(opt)
+                    }
+                }
+            },
+            '\\' => match current.dir {
+                Rigth => {
                     if let Some(opt) = get_dir_node(&current, Down, max_r, max_c) {
                         new_ligth.push(opt)
                     }
-                } else if b_v == '/' {
+                }
+                Left => {
                     if let Some(opt) = get_dir_node(&current, Up, max_r, max_c) {
                         new_ligth.push(opt)
                     }
-                } else if let Some(opt) = get_dir_node(&current, Rigth, max_r, max_c) {
-                    new_ligth.push(opt)
                 }
-            }
-            Left => {
-                if b_v == '|' {
+                Up => {
+                    if let Some(opt) = get_dir_node(&current, Left, max_r, max_c) {
+                        new_ligth.push(opt)
+                    }
+                }
+                Down => {
+                    if let Some(opt) = get_dir_node(&current, Rigth, max_r, max_c) {
+                        new_ligth.push(opt)
+                    }
+                }
+            },
+            '/' => match current.dir {
+                Rigth => {
+                    if let Some(opt) = get_dir_node(&current, Up, max_r, max_c) {
+                        new_ligth.push(opt)
+                    }
+                }
+                Left => {
                     if let Some(opt) = get_dir_node(&current, Down, max_r, max_c) {
                         new_ligth.push(opt)
                     }
-                    if let Some(opt) = get_dir_node(&current, Up, max_r, max_c) {
-                        new_ligth.push(opt)
-                    }
-                } else if b_v == '\\' {
-                    if let Some(opt) = get_dir_node(&current, Up, max_r, max_c) {
-                        new_ligth.push(opt)
-                    }
-                } else if b_v == '/' {
-                    if let Some(opt) = get_dir_node(&current, Down, max_r, max_c) {
-                        new_ligth.push(opt)
-                    }
-                } else if let Some(opt) = get_dir_node(&current, Left, max_r, max_c) {
-                    new_ligth.push(opt)
                 }
-            }
-            Up => {
-                if b_v == '-' {
-                    if let Some(opt) = get_dir_node(&current, Left, max_r, max_c) {
-                        new_ligth.push(opt)
-                    }
+                Up => {
                     if let Some(opt) = get_dir_node(&current, Rigth, max_r, max_c) {
                         new_ligth.push(opt)
                     }
-                } else if b_v == '/' {
-                    if let Some(opt) = get_dir_node(&current, Rigth, max_r, max_c) {
-                        new_ligth.push(opt)
-                    }
-                } else if b_v == '\\' {
-                    if let Some(opt) = get_dir_node(&current, Left, max_r, max_c) {
-                        new_ligth.push(opt)
-                    }
-                } else if let Some(opt) = get_dir_node(&current, Up, max_r, max_c) {
-                    new_ligth.push(opt)
                 }
-            }
-            Down => {
-                if b_v == '-' {
+                Down => {
                     if let Some(opt) = get_dir_node(&current, Left, max_r, max_c) {
                         new_ligth.push(opt)
                     }
-                    if let Some(opt) = get_dir_node(&current, Rigth, max_r, max_c) {
-                        new_ligth.push(opt)
-                    }
-                } else if b_v == '/' {
-                    if let Some(opt) = get_dir_node(&current, Left, max_r, max_c) {
-                        new_ligth.push(opt)
-                    }
-                } else if b_v == '\\' {
-                    if let Some(opt) = get_dir_node(&current, Rigth, max_r, max_c) {
-                        new_ligth.push(opt)
-                    }
-                } else if let Some(opt) = get_dir_node(&current, Down, max_r, max_c) {
+                }
+            },
+            _ => {
+                if let Some(opt) = get_dir_node(&current, current.dir, max_r, max_c) {
                     new_ligth.push(opt)
                 }
             }
@@ -195,8 +179,7 @@ fn main_part(board: &Vec<Vec<char>>, start: Light) -> u64 {
 
     res
 }
-
-pub fn part_one(input: &str) -> Option<u64> {
+fn get_board(input: &str) -> Vec<Vec<char>> {
     let mut board: Vec<Vec<char>> = Vec::new();
     input.lines().for_each(|l| {
         if l.is_empty() {
@@ -206,6 +189,11 @@ pub fn part_one(input: &str) -> Option<u64> {
         l.chars().for_each(|c| row.push(c));
         board.push(row);
     });
+    board
+}
+
+pub fn part_one(input: &str) -> Option<u64> {
+    let board = get_board(input);
     Some(main_part(
         &board,
         Light {
@@ -217,16 +205,8 @@ pub fn part_one(input: &str) -> Option<u64> {
 }
 
 pub fn part_two(input: &str) -> Option<u64> {
+    let board = get_board(input);
     let mut max_res = 0;
-    let mut board: Vec<Vec<char>> = Vec::new();
-    input.lines().for_each(|l| {
-        if l.is_empty() {
-            return;
-        }
-        let mut row = Vec::new();
-        l.chars().for_each(|c| row.push(c));
-        board.push(row);
-    });
     for i in 0..board.len() {
         let t_res = main_part(
             &board,
@@ -242,6 +222,26 @@ pub fn part_two(input: &str) -> Option<u64> {
                 dir: Up,
                 c: i,
                 r: board.len() - 1,
+            },
+        );
+        max_res = max(max(b_res, t_res), max_res)
+    }
+
+    for i in 0..board[0].len() {
+        let t_res = main_part(
+            &board,
+            Light {
+                dir: Rigth,
+                c: 0,
+                r: i,
+            },
+        );
+        let b_res = main_part(
+            &board,
+            Light {
+                dir: Left,
+                c: board[0].len() - 1,
+                r: i,
             },
         );
         max_res = max(max(b_res, t_res), max_res)
