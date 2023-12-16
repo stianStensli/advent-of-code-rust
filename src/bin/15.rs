@@ -106,7 +106,8 @@ mod tests {
     #[test]
     fn test_part_one() {
         let result = part_one(&advent_of_code::template::read_file("examples", DAY));
-        assert_eq!(result, Some(510388));
+        assert_eq!(result, Some(1320));
+        // assert_eq!(result, Some(510388));
     }
 
     #[test]
