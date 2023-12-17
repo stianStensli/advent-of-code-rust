@@ -1,5 +1,6 @@
 advent_of_code::solution!(17);
 use priority_queue::PriorityQueue;
+use std::collections::HashMap;
 
 #[derive(Clone, Copy, PartialEq, Eq, Hash)]
 enum Direction {
@@ -19,10 +20,28 @@ struct LavaPosition {
     dir: Direction,
 }
 
+#[derive(Clone, Copy, PartialEq, Eq, Hash)]
+struct LavaHash {
+    r: usize,
+    c: usize,
+    steps_in_a_row: u32,
+    dir: Direction,
+}
+
+fn get_hash(pos: &LavaPosition) -> LavaHash {
+    LavaHash {
+        c: pos.c,
+        r: pos.r,
+        steps_in_a_row: pos.steps_in_a_row,
+        dir: pos.dir,
+    }
+}
+
 fn legal_moves_ultra(
     position: &LavaPosition,
     next_dir: Direction,
     board: &Vec<Vec<u64>>,
+    prune_board: &mut HashMap<LavaHash, u64>,
 ) -> Option<LavaPosition> {
     if position.dir != Direction::No && position.dir != next_dir && position.steps_in_a_row < 4 {
         // 5?
@@ -98,6 +117,21 @@ fn legal_moves_ultra(
             steps_in_a_row,
         });
     }
+    if let Some(n) = next {
+        let hash = get_hash(&n);
+        match prune_board.get(&hash) {
+            None => {
+                prune_board.insert(hash, n.heat_loss);
+            }
+            Some(h_l) => {
+                if h_l <= &n.heat_loss {
+                    return None;
+                } else {
+                    prune_board.insert(hash, n.heat_loss);
+                }
+            }
+        }
+    }
     next
 }
 
@@ -105,9 +139,7 @@ fn legal_moves(
     position: &LavaPosition,
     next_dir: Direction,
     board: &Vec<Vec<u64>>,
-    prune_board_1: &mut [Vec<u64>],
-    prune_board_2: &mut [Vec<u64>],
-    prune_board_3: &mut [Vec<u64>],
+    prune_board: &mut HashMap<LavaHash, u64>,
 ) -> Option<LavaPosition> {
     if position.dir == Direction::Down && next_dir == Direction::Up {
         return None;
@@ -178,27 +210,22 @@ fn legal_moves(
             dir: next_dir,
             steps_in_a_row,
         });
-    } /*
-      if let Some(n) = next {
-          if n.steps_in_a_row == 1 {
-              if prune_board_1[n.r][n.c] < n.heat_loss {
-                  return None;
-              }
-              prune_board_1[n.r][n.c] = n.heat_loss;
-          }
-          if n.steps_in_a_row == 2 {
-              if prune_board_2[n.r][n.c] < n.heat_loss {
-                  return None;
-              }
-              prune_board_2[n.r][n.c] = n.heat_loss;
-          }
-          if n.steps_in_a_row == 3 {
-              if prune_board_3[n.r][n.c] < n.heat_loss {
-                  return None;
-              }
-              prune_board_3[n.r][n.c] = n.heat_loss;
-          }
-      }*/
+    }
+    if let Some(n) = next {
+        let hash = get_hash(&n);
+        match prune_board.get(&hash) {
+            None => {
+                prune_board.insert(hash, n.heat_loss);
+            }
+            Some(h_l) => {
+                if h_l <= &n.heat_loss {
+                    return None;
+                } else {
+                    prune_board.insert(hash, n.heat_loss);
+                }
+            }
+        }
+    }
     next
 }
 
@@ -213,9 +240,7 @@ pub fn part_one(input: &str) -> Option<u64> {
             .for_each(|c| row.push(c.to_digit(10).unwrap() as u64));
         board.push(row)
     });
-    let mut prune_board_1: Vec<Vec<u64>> = vec![vec![u64::MAX; board[0].len()]; board.len()];
-    let mut prune_board_2: Vec<Vec<u64>> = vec![vec![u64::MAX; board[0].len()]; board.len()];
-    let mut prune_board_3: Vec<Vec<u64>> = vec![vec![u64::MAX; board[0].len()]; board.len()];
+    let mut prune_board: HashMap<LavaHash, u64> = HashMap::new();
     let w_rows = board.len() - 1;
     let w_cols = board[0].len() - 1;
     let mut pq = PriorityQueue::new();
@@ -231,57 +256,25 @@ pub fn part_one(input: &str) -> Option<u64> {
     );
 
     while let Some(current) = pq.pop() {
-        /*println!(
-            "curr: {}, p: [{},{}]",
-            current.0.heat_loss, current.0.r, current.0.c
-        );*/
-        if let Some(next) = legal_moves(
-            &current.0,
-            Direction::Up,
-            &board,
-            &mut prune_board_1,
-            &mut prune_board_2,
-            &mut prune_board_3,
-        ) {
+        if let Some(next) = legal_moves(&current.0, Direction::Up, &board, &mut prune_board) {
             if next.r == w_rows && next.c == w_cols {
                 return Some(next.heat_loss);
             }
             pq.push(next, u64::MAX - next.heat_loss);
         };
-        if let Some(next) = legal_moves(
-            &current.0,
-            Direction::Down,
-            &board,
-            &mut prune_board_1,
-            &mut prune_board_2,
-            &mut prune_board_3,
-        ) {
+        if let Some(next) = legal_moves(&current.0, Direction::Down, &board, &mut prune_board) {
             if next.r == w_rows && next.c == w_cols {
                 return Some(next.heat_loss);
             }
             pq.push(next, u64::MAX - next.heat_loss);
         };
-        if let Some(next) = legal_moves(
-            &current.0,
-            Direction::Right,
-            &board,
-            &mut prune_board_1,
-            &mut prune_board_2,
-            &mut prune_board_3,
-        ) {
+        if let Some(next) = legal_moves(&current.0, Direction::Right, &board, &mut prune_board) {
             if next.r == w_rows && next.c == w_cols {
                 return Some(next.heat_loss);
             }
             pq.push(next, u64::MAX - next.heat_loss);
         };
-        if let Some(next) = legal_moves(
-            &current.0,
-            Direction::Left,
-            &board,
-            &mut prune_board_1,
-            &mut prune_board_2,
-            &mut prune_board_3,
-        ) {
+        if let Some(next) = legal_moves(&current.0, Direction::Left, &board, &mut prune_board) {
             if next.r == w_rows && next.c == w_cols {
                 return Some(next.heat_loss);
             }
@@ -315,13 +308,10 @@ pub fn part_two(input: &str) -> Option<u64> {
         },
         u64::MAX,
     );
+    let mut prune_board: HashMap<LavaHash, u64> = HashMap::new();
 
     while let Some(current) = pq.pop() {
-        /*println!(
-            "curr: {}, p: [{},{}]",
-            current.0.heat_loss, current.0.r, current.0.c
-        );*/
-        if let Some(next) = legal_moves_ultra(&current.0, Direction::Up, &board) {
+        if let Some(next) = legal_moves_ultra(&current.0, Direction::Up, &board, &mut prune_board) {
             if next.r == w_rows && next.c == w_cols {
                 if next.steps_in_a_row < 4 {
                     continue;
@@ -330,7 +320,8 @@ pub fn part_two(input: &str) -> Option<u64> {
             }
             pq.push(next, u64::MAX - next.heat_loss);
         };
-        if let Some(next) = legal_moves_ultra(&current.0, Direction::Down, &board) {
+        if let Some(next) = legal_moves_ultra(&current.0, Direction::Down, &board, &mut prune_board)
+        {
             if next.r == w_rows && next.c == w_cols {
                 if next.steps_in_a_row < 4 {
                     continue;
@@ -339,7 +330,9 @@ pub fn part_two(input: &str) -> Option<u64> {
             }
             pq.push(next, u64::MAX - next.heat_loss);
         };
-        if let Some(next) = legal_moves_ultra(&current.0, Direction::Right, &board) {
+        if let Some(next) =
+            legal_moves_ultra(&current.0, Direction::Right, &board, &mut prune_board)
+        {
             if next.r == w_rows && next.c == w_cols {
                 if next.steps_in_a_row < 4 {
                     continue;
@@ -348,7 +341,8 @@ pub fn part_two(input: &str) -> Option<u64> {
             }
             pq.push(next, u64::MAX - next.heat_loss);
         };
-        if let Some(next) = legal_moves_ultra(&current.0, Direction::Left, &board) {
+        if let Some(next) = legal_moves_ultra(&current.0, Direction::Left, &board, &mut prune_board)
+        {
             if next.r == w_rows && next.c == w_cols {
                 if next.steps_in_a_row < 4 {
                     continue;
