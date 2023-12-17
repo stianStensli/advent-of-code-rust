@@ -1,4 +1,4 @@
-use crate::Direction::{Down, Left, Rigth, Up};
+use crate::Direction::{Down, Left, Right, Up};
 use std::cmp::max;
 advent_of_code::solution!(16);
 
@@ -7,7 +7,7 @@ enum Direction {
     Up,
     Down,
     Left,
-    Rigth,
+    Right,
 }
 
 #[derive(Clone)]
@@ -39,7 +39,7 @@ fn update_res_board(l: &Light, res: &LDirection) -> Option<LDirection> {
             up: res.up,
         });
     }
-    if l.dir == Rigth {
+    if l.dir == Right {
         if res.rigth {
             return None;
         }
@@ -107,12 +107,12 @@ fn get_dir_node(l: &Light, next_dir: Direction, max_r: usize, max_c: usize) -> O
                 r: l.r,
             })
         }
-        Rigth => {
+        Right => {
             if l.c + 1 == max_c {
                 return None;
             }
             Some(Light {
-                dir: Rigth,
+                dir: Right,
                 c: l.c + 1,
                 r: l.r,
             })
@@ -144,7 +144,7 @@ fn main_part(board: &Vec<Vec<char>>, start: Light) -> u64 {
 
         match b_v {
             '|' => match current.dir {
-                Rigth | Left => {
+                Right | Left => {
                     if let Some(opt) = get_dir_node(&current, Down, max_r, max_c) {
                         new_ligth.push(opt)
                     }
@@ -163,7 +163,7 @@ fn main_part(board: &Vec<Vec<char>>, start: Light) -> u64 {
                     if let Some(opt) = get_dir_node(&current, Left, max_r, max_c) {
                         new_ligth.push(opt)
                     }
-                    if let Some(opt) = get_dir_node(&current, Rigth, max_r, max_c) {
+                    if let Some(opt) = get_dir_node(&current, Right, max_r, max_c) {
                         new_ligth.push(opt)
                     }
                 }
@@ -174,7 +174,7 @@ fn main_part(board: &Vec<Vec<char>>, start: Light) -> u64 {
                 }
             },
             '\\' => match current.dir {
-                Rigth => {
+                Right => {
                     if let Some(opt) = get_dir_node(&current, Down, max_r, max_c) {
                         new_ligth.push(opt)
                     }
@@ -190,13 +190,13 @@ fn main_part(board: &Vec<Vec<char>>, start: Light) -> u64 {
                     }
                 }
                 Down => {
-                    if let Some(opt) = get_dir_node(&current, Rigth, max_r, max_c) {
+                    if let Some(opt) = get_dir_node(&current, Right, max_r, max_c) {
                         new_ligth.push(opt)
                     }
                 }
             },
             '/' => match current.dir {
-                Rigth => {
+                Right => {
                     if let Some(opt) = get_dir_node(&current, Up, max_r, max_c) {
                         new_ligth.push(opt)
                     }
@@ -207,7 +207,7 @@ fn main_part(board: &Vec<Vec<char>>, start: Light) -> u64 {
                     }
                 }
                 Up => {
-                    if let Some(opt) = get_dir_node(&current, Rigth, max_r, max_c) {
+                    if let Some(opt) = get_dir_node(&current, Right, max_r, max_c) {
                         new_ligth.push(opt)
                     }
                 }
@@ -259,7 +259,7 @@ pub fn part_one(input: &str) -> Option<u64> {
     Some(main_part(
         &board,
         Light {
-            dir: Rigth,
+            dir: Right,
             c: 0,
             r: 0,
         },
@@ -293,7 +293,7 @@ pub fn part_two(input: &str) -> Option<u64> {
         let t_res = main_part(
             &board,
             Light {
-                dir: Rigth,
+                dir: Right,
                 c: 0,
                 r: i,
             },
