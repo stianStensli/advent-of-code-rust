@@ -304,6 +304,7 @@ pub fn part_two(input: &str) -> Option<u64> {
     let mut last_row_nr: u64 = 0;
     let mut last_row_res: u64 = 0;
 
+    let mut print_board: Vec<Vec<char>> = vec![vec!['.'; 1]; 1];
     rows_of_interest.iter().for_each(|row| {
         let row = **row;
 
@@ -322,19 +323,38 @@ pub fn part_two(input: &str) -> Option<u64> {
             let is_line = node.end_c - node.start_c == 0;
             let is_diff = node.start_r != row || node.end_r != row;
 
-            if is_line && is_diff {
+            if is_line && !is_diff {
                 last_row_res += 1;
+                if node.start_char == 'F'
+                    || node.start_char == '|'
+                    || node.start_char == '7'
+                    || node.end_char == 'F'
+                    || node.end_char == '|'
+                    || node.end_char == '7'
+                {
+                    if inside_next {
+                        last_row_res += node.start_c - last_col;
+                        // println!("added: {}", 1 + node.start_c - last_col);
+                    }
+                    inside_next = !inside_next;
+                }
+            } else if is_line && is_diff {
+                last_row_res += 1;
+                // println!("added l: 1");
                 if inside_next {
                     last_row_res += node.end_c - last_col;
+                    // println!("added l: {}", node.end_c - last_col);
                 }
                 inside_next = !inside_next;
             } else {
                 last_row_res += 1 + node.end_c - node.start_c;
+                // println!("added: {}", 1 + node.end_c - node.start_c);
                 if node.start_r == row
                     && (node.start_char == 'F' || node.start_char == '|' || node.start_char == '7')
                 {
                     if inside_next {
                         last_row_res += node.start_c - last_col;
+                        // println!("added: {}", 1 + node.start_c - last_col);
                     }
                     inside_next = !inside_next;
                 }
@@ -349,8 +369,15 @@ pub fn part_two(input: &str) -> Option<u64> {
 
         if row == 0 {
             res += last_row_res;
+            // println!("row: {}, tot added: {}", row, last_row_res);
+        } else {
+            res += last_row_res * (row - last_row_nr);
+            // println!(
+            //     "row: {}, tot added: {}",
+            //     row,
+            //     last_row_res * (row - last_row_nr)
+            // );
         }
-        res += last_row_res * (row - last_row_nr);
         last_row_nr = row;
         last_row_res = 0;
     });
