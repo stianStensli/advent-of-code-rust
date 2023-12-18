@@ -201,7 +201,7 @@ pub fn part_two(input: &str) -> Option<u64> {
         if start_dir == " " {
             start_dir = dir;
         }
-        println!("\nBoard: r: {}, c: {}, dir: {}, nr: {}", r, c, dir, nr);
+        // println!("\nBoard: r: {}, c: {}, dir: {}, nr: {}", r, c, dir, nr);
         if dir == "R" {
             if last_dir == "D" {
                 dir_char = 'L';
@@ -213,8 +213,8 @@ pub fn part_two(input: &str) -> Option<u64> {
                 end_c: c + nr,
                 start_r: r,
                 end_r: r,
-                start_char: dir_char,
-                end_char: ' ', // TODO
+                start_char: '-',
+                end_char: ' ',
             });
             c += nr;
         } else if dir == "D" {
@@ -229,8 +229,8 @@ pub fn part_two(input: &str) -> Option<u64> {
                 end_c: c,
                 start_r: r + 1,
                 end_r: r + nr,
-                start_char: dir_char,
-                end_char: ' ', // TODO
+                start_char: '|',
+                end_char: ' ',
             });
             r += nr;
         } else if dir == "L" {
@@ -241,7 +241,7 @@ pub fn part_two(input: &str) -> Option<u64> {
             }
             if nr > c {
                 board.iter_mut().for_each(|b| b.update_c(nr));
-                println!("yp?");
+                // println!("yp?");
                 c += nr;
             }
             board.push(FenceNode {
@@ -249,8 +249,8 @@ pub fn part_two(input: &str) -> Option<u64> {
                 end_c: c - 1,
                 start_r: r,
                 end_r: r,
-                start_char: ' ', // TODO
-                end_char: dir_char,
+                start_char: ' ',
+                end_char: '-',
             });
             c -= nr;
         } else if dir == "U" {
@@ -268,8 +268,8 @@ pub fn part_two(input: &str) -> Option<u64> {
                 end_c: c,
                 start_r: r - nr,
                 end_r: r - 1,
-                start_char: ' ', // TODO
-                end_char: dir_char,
+                start_char: ' ',
+                end_char: '|',
             });
             r -= nr;
         }
@@ -284,16 +284,12 @@ pub fn part_two(input: &str) -> Option<u64> {
     let b_l = board.len();
     if start_dir == "R" && last_dir == "U" {
         board[b_l - 1].update_char('F');
-        board[0].update_char('F');
     } else if start_dir == "L" && last_dir == "U" {
         board[b_l - 1].update_char('7');
-        board[0].update_char('7');
     } else if start_dir == "L" && last_dir == "D" {
         board[b_l - 1].update_char('J');
-        board[0].update_char('J');
     } else if start_dir == "R" && last_dir == "D" {
         board[b_l - 1].update_char('L');
-        board[0].update_char('L');
     }
     // TODO: loop can be writen in main loop
     board.sort_by(|b, b1| b.start_r.cmp(&b1.start_r));
@@ -302,26 +298,61 @@ pub fn part_two(input: &str) -> Option<u64> {
         rows_of_interest.insert(b.end_r);
     });
     let mut rows_of_interest = rows_of_interest.iter().collect::<Vec<&u64>>();
+    rows_of_interest.sort();
 
     let mut res = 0;
-    let mut nex_row_nr = 0;
+    let mut last_row_nr: u64 = 0;
+    let mut last_row_res: u64 = 0;
+
     rows_of_interest.iter().for_each(|row| {
-        let mut inside = false;
-        let mut inside_next = false;
-        let r_res = 0;
         let row = **row;
-        println!("Point: {}", row);
+
+        let mut inside_next = false;
         let mut active_nodes: Vec<&FenceNode> = board
             .iter()
             .filter(|b| row >= b.start_r && row <= b.end_r)
             .collect();
         active_nodes.sort_by(|r, s| r.start_c.cmp(&s.start_c));
-        active_nodes.iter().for_each(|node| {})
-    });
-    // println!("\nBoard: ");
-    println!("res: {}", board.len());
-    board.iter().for_each(|b| {
-        println!("{:?}", b);
+
+        // println!("\nRow: {}", row);
+        // println!("nodes {:?}", active_nodes);
+        let mut last_col = 0;
+        active_nodes.iter().for_each(|node| {
+            // println!("{:?}", node);
+            let is_line = node.end_c - node.start_c == 0;
+            let is_diff = node.start_r != row || node.end_r != row;
+
+            if is_line && is_diff {
+                last_row_res += 1;
+                if inside_next {
+                    last_row_res += node.end_c - last_col;
+                }
+                inside_next = !inside_next;
+            } else {
+                last_row_res += 1 + node.end_c - node.start_c;
+                if node.start_r == row
+                    && (node.start_char == 'F' || node.start_char == '|' || node.start_char == '7')
+                {
+                    if inside_next {
+                        last_row_res += node.start_c - last_col;
+                    }
+                    inside_next = !inside_next;
+                }
+                if node.end_r == row
+                    && (node.end_char == 'F' || node.end_char == '|' || node.end_char == '7')
+                {
+                    inside_next = !inside_next;
+                }
+            }
+            last_col = node.end_c + 1;
+        });
+
+        if row == 0 {
+            res += last_row_res;
+        }
+        res += last_row_res * (row - last_row_nr);
+        last_row_nr = row;
+        last_row_res = 0;
     });
     Some(res)
 }
@@ -339,6 +370,6 @@ mod tests {
     #[test]
     fn test_part_two() {
         let result = part_two(&advent_of_code::template::read_file("examples", DAY));
-        assert_eq!(result, Some(952408144115));
+        assert_eq!(result, Some(62)) //Some(952408144115));
     }
 }
