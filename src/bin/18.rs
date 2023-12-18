@@ -1,156 +1,12 @@
 use std::collections::HashSet;
 advent_of_code::solution!(18);
 
-fn insert_and_push(vec: &mut Vec<char>, index: usize, value: char) {
-    while vec.len() <= index {
-        vec.push('.');
-    }
-    vec[index] = value;
-}
-
-fn insert_and_push_arr(vec: &mut Vec<Vec<char>>, row: usize, col: usize, value: char) {
-    while vec.len() <= row {
-        vec.push(Vec::new());
-    }
-    while vec[row].len() <= col {
-        vec[row].push('.');
-    }
-    vec[row][col] = value;
-}
-
 pub fn part_one(input: &str) -> Option<u64> {
-    let mut r = 0;
-    let mut c = 0;
-    let mut board: Vec<Vec<char>> = vec![vec!['.'; 1]; 1];
-    let mut start_dir = " ";
-    let mut last_dir = " ";
-    input.lines().for_each(|l| {
-        if l.is_empty() {
-            return;
-        }
-        /*
-        board.iter().for_each(|b| {
-            print!("\n");
-            b.iter()
-                .for_each(|v| if *v { print!("#") } else { print!(".") })
-        });*/
-        let mut problem = l.split(' ');
-        let dir = problem.next().unwrap();
-        let nr = problem.next().unwrap().parse::<u64>().unwrap();
-        if start_dir == " " {
-            start_dir = dir;
-        }
-        // println!("\nBoard: r: {}, c: {}, dir: {}, nr: {}", r, c, dir, nr);
-        if dir == "R" {
-            if last_dir == "D" {
-                board[r][c] = 'L';
-            } else if last_dir == "U" {
-                board[r][c] = 'F';
-            }
-            // println!("r: {}, c: {}", r, c);
-            for _ in 0..nr {
-                c += 1;
-                insert_and_push(&mut board[r], c, '-')
-            }
-        } else if dir == "D" {
-            if last_dir == "R" {
-                board[r][c] = '7';
-            } else if last_dir == "L" {
-                board[r][c] = 'F';
-            }
-            for _ in 0..nr {
-                r += 1;
-                insert_and_push_arr(&mut board, r, c, '|')
-            }
-        } else if dir == "L" {
-            if last_dir == "D" {
-                board[r][c] = 'J';
-            } else if last_dir == "U" {
-                board[r][c] = '7';
-            }
-            for _ in 0..nr {
-                if c == 0 {
-                    for i in 0..board.len() {
-                        for _ in 0..10 {
-                            board[i].insert(0, '.');
-                        }
-                    }
-                    c += 10;
-                }
-                c -= 1;
-                insert_and_push(&mut board[r], c, '-');
-            }
-        } else if dir == "U" {
-            if last_dir == "R" {
-                board[r][c] = 'J';
-            } else if last_dir == "L" {
-                board[r][c] = 'L';
-            }
-            for _ in 0..nr {
-                if r == 0 {
-                    board.insert(0, Vec::new());
-                    r += 1;
-                }
-                r -= 1;
-                insert_and_push(&mut board[r], c, '|');
-            }
-        }
-        last_dir = dir;
-    });
-    if start_dir == "R" && last_dir == "U" {
-        board[r][c] = 'F';
-    } else if start_dir == "L" && last_dir == "U" {
-        board[r][c] = '7';
-    } else if start_dir == "L" && last_dir == "D" {
-        board[r][c] = 'J';
-    } else if start_dir == "R" && last_dir == "D" {
-        board[r][c] = 'L';
-    }
-    let mut res = 0;
-    // println!("\nBoard: ");
-    board.iter().for_each(|b| {
-        let mut inside = false;
-        // print!("\n");
-        b.iter().for_each(|v| {
-            /*
-            if v == &'F' || v == &'7' {
-                if start_at_corner {
-                    res += 1;
-                    start_at_corner = false;
-                    print!("{}", v);
-                    return;
-                }
-                start_at_corner = true;
-            }*/
-            if v == &'|' || v == &'J' || v == &'L' {
-                inside = !inside;
-                res += 1;
-            } else if v != &'.' || inside {
-                res += 1;
-            } /*
-              if inside && v == &'.' {
-                  print!("o")
-              } else {
-                  print!("{}", v)
-              }
-              */
-            /*
-            if *v {
-                last_hash = true;
-                res += 1;
-                print!("#")
-            } else {
-                if last_hash && crossed {
-                    inside != inside;
-                }
-                if inside {
-                    res += 1;
-                }
-                print!(".")
-            }*/
-        })
-    });
-    Some(res)
+    main_stuff(input, false)
+}
+
+pub fn part_two(input: &str) -> Option<u64> {
+    main_stuff(input, true)
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -182,12 +38,13 @@ impl FenceNode {
     }
 }
 
-pub fn part_two(input: &str) -> Option<u64> {
+pub fn main_stuff(input: &str, is_part2: bool) -> Option<u64> {
     let mut r: u64 = 0;
     let mut c: u64 = 0;
     let mut board: Vec<FenceNode> = Vec::new();
     let mut rows_of_interest: HashSet<u64> = HashSet::new();
     rows_of_interest.insert(0);
+
     let mut start_dir = " ";
     let mut last_dir = " ";
     input.lines().for_each(|l| {
@@ -195,13 +52,30 @@ pub fn part_two(input: &str) -> Option<u64> {
             return;
         }
         let mut problem = l.split(' ');
-        let dir = problem.next().unwrap();
-        let nr = problem.next().unwrap().parse::<u64>().unwrap();
+        let mut dir = problem.next().unwrap();
+        let mut nr = problem.next().unwrap().parse::<u64>().unwrap();
+
+        if is_part2 {
+            let hash = problem.next().unwrap();
+
+            let hash_nr: &str = &hash[2..7];
+            nr = u64::from_str_radix(hash_nr, 16).unwrap();
+            let new_dir: u64 = hash[7..8].parse().unwrap();
+            if new_dir == 0 {
+                dir = "R";
+            } else if new_dir == 1 {
+                dir = "D";
+            } else if new_dir == 2 {
+                dir = "L";
+            } else if new_dir == 3 {
+                dir = "U";
+            }
+        }
+
         let mut dir_char = ' ';
         if start_dir == " " {
             start_dir = dir;
         }
-        // println!("\nBoard: r: {}, c: {}, dir: {}, nr: {}", r, c, dir, nr);
         if dir == "R" {
             if last_dir == "D" {
                 dir_char = 'L';
@@ -277,8 +151,6 @@ pub fn part_two(input: &str) -> Option<u64> {
         if b_l > 1 {
             board[b_l - 2].update_char(dir_char);
         }
-
-        //println!("last: {:?}", board.last().unwrap());
         last_dir = dir;
     });
     let b_l = board.len();
@@ -294,6 +166,8 @@ pub fn part_two(input: &str) -> Option<u64> {
     // TODO: loop can be writen in main loop
     board.sort_by(|b, b1| b.start_r.cmp(&b1.start_r));
     board.iter().for_each(|b| {
+        rows_of_interest.insert(b.start_r.saturating_sub(1));
+        rows_of_interest.insert(b.end_r.saturating_sub(1));
         rows_of_interest.insert(b.start_r);
         rows_of_interest.insert(b.end_r);
     });
@@ -304,7 +178,6 @@ pub fn part_two(input: &str) -> Option<u64> {
     let mut last_row_nr: u64 = 0;
     let mut last_row_res: u64 = 0;
 
-    let mut print_board: Vec<Vec<char>> = vec![vec!['.'; 1]; 1];
     rows_of_interest.iter().for_each(|row| {
         let row = **row;
 
@@ -315,47 +188,45 @@ pub fn part_two(input: &str) -> Option<u64> {
             .collect();
         active_nodes.sort_by(|r, s| r.start_c.cmp(&s.start_c));
 
-        // println!("\nRow: {}", row);
-        // println!("nodes {:?}", active_nodes);
         let mut last_col = 0;
         active_nodes.iter().for_each(|node| {
-            // println!("{:?}", node);
             let is_line = node.end_c - node.start_c == 0;
             let is_diff = node.start_r != row || node.end_r != row;
 
             if is_line && !is_diff {
                 last_row_res += 1;
+                if inside_next {
+                    last_row_res += node.start_c - last_col;
+                }
                 if node.start_char == 'F'
-                    || node.start_char == '|'
                     || node.start_char == '7'
                     || node.end_char == 'F'
-                    || node.end_char == '|'
                     || node.end_char == '7'
                 {
-                    if inside_next {
-                        last_row_res += node.start_c - last_col;
-                        // println!("added: {}", 1 + node.start_c - last_col);
-                    }
                     inside_next = !inside_next;
                 }
             } else if is_line && is_diff {
                 last_row_res += 1;
-                // println!("added l: 1");
                 if inside_next {
                     last_row_res += node.end_c - last_col;
-                    // println!("added l: {}", node.end_c - last_col);
                 }
-                inside_next = !inside_next;
+                if (row == node.start_r
+                    && (node.start_char == 'F' || node.start_char == '|' || node.start_char == '7'))
+                    || (row == node.end_r
+                        && (node.end_char == 'F' || node.end_char == '|' || node.end_char == '7'))
+                    || (row != node.start_r && row != node.end_r)
+                {
+                    inside_next = !inside_next;
+                }
             } else {
                 last_row_res += 1 + node.end_c - node.start_c;
-                // println!("added: {}", 1 + node.end_c - node.start_c);
+
+                if inside_next {
+                    last_row_res += node.start_c - last_col;
+                }
                 if node.start_r == row
                     && (node.start_char == 'F' || node.start_char == '|' || node.start_char == '7')
                 {
-                    if inside_next {
-                        last_row_res += node.start_c - last_col;
-                        // println!("added: {}", 1 + node.start_c - last_col);
-                    }
                     inside_next = !inside_next;
                 }
                 if node.end_r == row
@@ -369,14 +240,8 @@ pub fn part_two(input: &str) -> Option<u64> {
 
         if row == 0 {
             res += last_row_res;
-            // println!("row: {}, tot added: {}", row, last_row_res);
         } else {
             res += last_row_res * (row - last_row_nr);
-            // println!(
-            //     "row: {}, tot added: {}",
-            //     row,
-            //     last_row_res * (row - last_row_nr)
-            // );
         }
         last_row_nr = row;
         last_row_res = 0;
@@ -397,6 +262,6 @@ mod tests {
     #[test]
     fn test_part_two() {
         let result = part_two(&advent_of_code::template::read_file("examples", DAY));
-        assert_eq!(result, Some(62)) //Some(952408144115));
+        assert_eq!(result, Some(952408144115));
     }
 }
