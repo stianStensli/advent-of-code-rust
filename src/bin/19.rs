@@ -93,7 +93,7 @@ fn get_next_rule(rules: &Vec<&str>, part: &Part) -> String {
     panic!("nooo");
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 struct PartRange {
     x: u64,
     x_e: u64,
@@ -108,6 +108,120 @@ struct PartRange {
 impl PartRange {
     pub fn get_possibilities(self) -> u64 {
         (1 + self.x_e - self.x) * (1 + self.m_e - self.m) * (1 + self.a_e - self.a) * (1 + self.s_e - self.s)
+    }
+
+    // 2,8 < 5
+    //2-4, 5-8
+    fn split_bigger(self, part_to_check: &str, nr: u64) -> (Option<PartRange>, Option<PartRange>) {
+        let mut x_s = self.x;
+        let mut x_e = self.x_e;
+
+        let mut m_s = self.m;
+        let mut m_e = self.m_e;
+
+        let mut a_s = self.a;
+        let mut a_e = self.a_e;
+
+        let mut s_s = self.s;
+        let mut s_e = self.s_e;
+
+        match part_to_check {
+            "x" => {
+                x_e = nr - 1;
+                x_s = nr;
+            }
+            "m" => {
+                m_e = nr - 1;
+                m_s = nr;
+            }
+            "a" => {
+                a_e = nr - 1;
+                a_s = nr;
+            }
+            "s" => {
+                s_e = nr - 1;
+                s_s = nr;
+            }
+            _ => ()
+        };
+        let r1 = PartRange {
+            x: self.x,
+            x_e: x_e,
+            m: self.m,
+            m_e: m_e,
+            a: self.a,
+            a_e: a_e,
+            s: self.s,
+            s_e: s_e,
+        };
+        let r2 = PartRange {
+            x: x_s,
+            x_e: self.x_e,
+            m: m_s,
+            m_e: self.m_e,
+            a: a_s,
+            a_e: self.a_e,
+            s: s_s,
+            s_e: self.s_e,
+        };
+        return (Some(r1), Some(r2));
+    }
+
+    // 2,8 > 5
+    // 6-8, 2-5
+    fn split_lesser(self, part_to_check: &str, nr: u64) -> (Option<PartRange>, Option<PartRange>) {
+        let mut x_s = self.x;
+        let mut x_e = self.x_e;
+
+        let mut m_s = self.m;
+        let mut m_e = self.m_e;
+
+        let mut a_s = self.a;
+        let mut a_e = self.a_e;
+
+        let mut s_s = self.s;
+        let mut s_e = self.s_e;
+
+        match part_to_check {
+            "x" => {
+                x_s = nr + 1;
+                x_e = nr;
+            }
+            "m" => {
+                m_s = nr + 1;
+                m_e = nr;
+            }
+            "a" => {
+                a_s = nr + 1;
+                a_e = nr;
+            }
+            "s" => {
+                s_s = nr + 1;
+                s_e = nr;
+            }
+            _ => ()
+        };
+        let r1 = PartRange {
+            x: x_s,
+            x_e: self.x_e,
+            m: m_s,
+            m_e: self.m_e,
+            a: a_s,
+            a_e: self.a_e,
+            s: s_s,
+            s_e: self.s_e,
+        };
+        let r2 = PartRange {
+            x: self.x,
+            x_e: x_e,
+            m: self.m,
+            m_e: m_e,
+            a: self.a,
+            a_e: a_e,
+            s: self.s,
+            s_e: s_e,
+        };
+        return (Some(r1), Some(r2));
     }
 }
 
@@ -153,22 +267,23 @@ fn get_iter_rules(node: PartRange, function_map: &HashMap<&str, Vec<&str>>, curr
     let rules = function_map.get(current_function.as_str()).unwrap();
     let mut node = Some(node);
     let mut res = 0;
-    return rules.iter().map(|rule| {
+    for i in 0..rules.len() {
         if node.is_none() {
             return res;
         }
+        let rule = rules[i];
         if rule.contains(':') {
-            let splitted_res = split_range(rule.to_string(), node.unwrap());
-            node = splitted_res.1;
+            let splitted_res = split_range(rule.to_string(), node.clone().unwrap());
             if splitted_res.0.is_some() {
                 let new_prob = rule.split_once(':').unwrap().1;
                 res += get_iter_rules(splitted_res.0.unwrap(), function_map, new_prob.to_string())
             }
+            node = splitted_res.1;
         } else {
-            return res + get_iter_rules(node.unwrap(), function_map, rule.to_string());
+            return res + get_iter_rules(node.clone().unwrap(), function_map, rule.to_string());
         }
-        res
-    }).sum();
+    };
+    panic!("out of loop")
 }
 
 fn eval_rule_range(part_to_check: &str, nr: u64, part: PartRange, bigger: bool) -> (Option<PartRange>, Option<PartRange>) {
@@ -191,21 +306,17 @@ fn eval_rule_range(part_to_check: &str, nr: u64, part: PartRange, bigger: bool) 
             return (Some(part.clone()), None);
         }
         if nr_start < nr {
-            // TODO splitt
+            return part.split_bigger(part_to_check, nr);
         }
         return (None, Some(part.clone()));
-
     }
     if nr_start > nr {
         return (Some(part.clone()), None);
     }
     if nr_end > nr {
-        // todo splitt
+        return part.split_lesser(part_to_check, nr);
     }
-    if nr_end > nr {
-        return (None, Some(part.clone()));
-    }
-    panic!("oops")
+    return (None, Some(part.clone()));
 }
 
 fn split_range(rule: String, node: PartRange) -> (Option<PartRange>, Option<PartRange>) {
